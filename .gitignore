@@ -40,10 +40,6 @@ npm-debug.*
 yarn-debug.*
 yarn-error.*
 ios/main.jsbundle
-apps/mobile/assets/icon.png
-apps/mobile/assets/splash.png
-apps/mobile/assets/adaptive-icon.png
-apps/mobile/assets/favicon.png
 
 # Android
 *.apk
