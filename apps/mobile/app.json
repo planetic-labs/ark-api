@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Ark Messenger",
-    "slug": "ark-messenger",
+    "slug": "ark",
     "version": "2026.5.17",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -33,12 +33,14 @@
     },
     "extra": {
       "eas": {
-        "projectId": ""
-      }
+        "projectId": "2f1240a1-b669-41d1-98b2-647a16cf399f"
+      },
+      "router": {}
     },
     "scheme": "ark-messenger",
     "plugins": [
       "expo-router"
-    ]
+    ],
+    "owner": "arassypnov"
   }
 }
