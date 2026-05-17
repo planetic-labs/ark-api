@@ -1,0 +1,24 @@
+{
+  "name": "@ark/monorepo",
+  "version": "2026.5.17",
+  "private": true,
+  "engines": {
+    "node": ">=24.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "scripts": {
+    "preinstall": "npx only-allow pnpm",
+    "install:all": "pnpm install && cd backend && uv sync",
+    "infra:up": "docker compose -f infra/docker-compose.yml up -d db redis",
+    "infra:down": "docker compose -f infra/docker-compose.yml down",
+    "api:dev": "pnpm infra:up && docker compose -f infra/docker-compose.yml up api",
+    "mobile:dev": "pnpm --filter mobile dev --clear",
+    "dev": "pnpm infra:up && pnpm --parallel dev",
+    "lint": "pnpm --recursive run lint",
+    "test": "pnpm --recursive run test",
+    "clean": "pnpm --recursive exec rm -rf node_modules dist"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

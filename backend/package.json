@@ -1,0 +1,10 @@
+{
+  "name": "@ark/api",
+  "version": "2026.5.17",
+  "private": true,
+  "scripts": {
+    "dev": "cd .. && docker compose -f infra/docker-compose.yml up api",
+    "lint": "uv run ruff check .",
+    "test": "uv run pytest"
+  }
+}

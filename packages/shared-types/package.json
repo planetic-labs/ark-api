@@ -1,0 +1,7 @@
+{
+  "name": "@ark/shared-types",
+  "version": "2026.5.17",
+  "private": true,
+  "main": "index.ts",
+  "types": "index.ts"
+}
