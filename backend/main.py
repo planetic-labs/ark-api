@@ -3,6 +3,7 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 import structlog
 import asyncio
+import jwt
 
 # Setup logging
 logger = structlog.get_logger()
@@ -28,7 +29,6 @@ async def websocket_endpoint(
     token: str = None,
 ):
     from backend.core.security import decode_token
-    from jose import JWTError
     
     await websocket.accept()
     logger.info("WS handshake started", has_token=bool(token))
@@ -46,7 +46,7 @@ async def websocket_endpoint(
             await websocket.close(code=4003)
             return
         logger.info("WS token validated", user_id=user_id)
-    except JWTError as e:
+    except jwt.PyJWTError as e:
         logger.warning("WS rejected: Token validation failed", error=str(e))
         await websocket.close(code=4003)
         return

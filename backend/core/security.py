@@ -1,4 +1,4 @@
-from jose import jwt
+import jwt
 from datetime import datetime, timedelta, timezone
 from typing import Any
 from backend.core.config import settings

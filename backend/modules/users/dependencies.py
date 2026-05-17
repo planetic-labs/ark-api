@@ -1,6 +1,6 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from jose import JWTError, jwt
+import jwt
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
@@ -29,7 +29,7 @@ async def get_current_user(
         if user_id is None:
             logger.error("Token payload missing 'sub' claim")
             raise credentials_exception
-    except JWTError as e:
+    except jwt.PyJWTError as e:
         logger.error("JWT decoding failed", error=str(e))
         raise credentials_exception
         
