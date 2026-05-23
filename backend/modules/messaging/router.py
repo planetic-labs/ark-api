@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from backend.core.database import get_session
-from backend.modules.users.dependencies import get_current_user
+from backend.modules.users.dependencies import require_approved_user
 from backend.modules.users.models import User
 from backend.modules.messaging.schemas import (
     ChatSchema, ChatCreateSchema, MessageSchema, MessageCreateSchema
@@ -19,14 +19,14 @@ async def get_messaging_service(session: AsyncSession = Depends(get_session)) ->
 @router.post("/chats", response_model=ChatSchema)
 async def create_chat(
     body: ChatCreateSchema,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_approved_user),
     service: MessagingService = Depends(get_messaging_service)
 ):
     return await service.create_chat(body, current_user.id)
 
 @router.get("/chats", response_model=list[ChatSchema])
 async def list_chats(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_approved_user),
     service: MessagingService = Depends(get_messaging_service)
 ):
     logger.info("Listing chats for user", user_id=current_user.id)
@@ -41,7 +41,7 @@ async def list_chats(
 @router.post("/messages", response_model=MessageSchema)
 async def send_message(
     body: MessageCreateSchema,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_approved_user),
     service: MessagingService = Depends(get_messaging_service)
 ):
     try:
@@ -52,7 +52,7 @@ async def send_message(
 @router.get("/chats/{chat_id}/messages", response_model=list[MessageSchema])
 async def get_messages(
     chat_id: str,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_approved_user),
     service: MessagingService = Depends(get_messaging_service)
 ):
     return await service.get_chat_messages(chat_id)

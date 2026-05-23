@@ -12,16 +12,18 @@ from backend.modules.auth.router import router as auth_router
 from backend.modules.users.router import router as users_router
 from backend.modules.messaging.router import router as messaging_router
 from backend.core.websocket import manager, redis_broadcast_reader
+from backend.modules.users.init_db import create_superuser_if_not_exists
 
 app = FastAPI(
     title="Ark Messenger API",
-    version="2026.5.17",
+    version="2026.5.23",
     description="Corporate messenger backend for closed communities",
 )
 
 @app.on_event("startup")
 async def startup_event():
     asyncio.create_task(redis_broadcast_reader())
+    await create_superuser_if_not_exists()
 
 @app.websocket("/ws")
 async def websocket_endpoint(
@@ -82,11 +84,17 @@ app.add_middleware(
 
 @app.get("/")
 async def root():
-    return {"message": "Welcome to Ark Messenger API", "version": "2026.5.17"}
+    return {"message": "Welcome to Ark Messenger API", "version": "2026.5.23"}
 
 @app.get("/health")
 async def health_check():
     return {"status": "ok"}
+
+@app.get("/.well-known/jwks.json")
+async def jwks():
+    from backend.core.security import get_jwks
+    return get_jwks()
+
 
 if __name__ == "__main__":
     import uvicorn

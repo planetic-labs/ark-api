@@ -24,3 +24,18 @@ async def delete_auth_code(email: str) -> None:
     async with get_redis_client() as client:
         key = f"auth:code:{email}"
         await client.delete(key)
+
+async def set_setup_token(token_id: str, user_id: str) -> None:
+    async with get_redis_client() as client:
+        key = f"auth:setup:{token_id}"
+        await client.set(key, user_id, ex=1800)  # 30 minutes
+
+async def get_setup_token(token_id: str) -> str | None:
+    async with get_redis_client() as client:
+        key = f"auth:setup:{token_id}"
+        return await client.get(key)
+
+async def delete_setup_token(token_id: str) -> None:
+    async with get_redis_client() as client:
+        key = f"auth:setup:{token_id}"
+        await client.delete(key)

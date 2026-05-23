@@ -76,8 +76,8 @@ async function request<T>(
 
 export const api = {
   auth: {
-    requestCode: (email: string) => 
-      request('/auth/request-code', {
+    identify: (email: string) => 
+      request<any>('/auth/identify', {
         method: 'POST',
         body: JSON.stringify({ email }),
       }),
@@ -86,15 +86,30 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ email, code }),
       }),
+    setup: (setupToken: string, name: string, avatarUrl?: string) =>
+      request<any>('/auth/setup', {
+        method: 'POST',
+        body: JSON.stringify({ setup_token: setupToken, name, avatar_url: avatarUrl }),
+      }),
     refresh: (refreshToken: string) =>
       request<any>('/auth/refresh', {
         method: 'POST',
         body: JSON.stringify({ refresh_token: refreshToken }),
       }),
+    logout: () =>
+      request<any>('/auth/logout', {
+        method: 'POST',
+      }),
   },
+
   users: {
     me: (token?: string) => request<any>('/users/me', {}, token),
     listAll: () => request<any[]>('/users/'),
+    create: (userData: { email: string; full_name?: string; role: string }) => 
+      request<any>('/users/', {
+        method: 'POST',
+        body: JSON.stringify(userData),
+      }),
   },
   messaging: {
     listChats: () => request<any[]>('/messaging/chats'),

@@ -2,7 +2,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "Ark Messenger"
-    VERSION: str = "2026.5.17"
+    VERSION: str = "2026.5.23"
     API_V1_STR: str = "/api/v1"
 
     # Database
@@ -15,9 +15,13 @@ class Settings(BaseSettings):
     SECRET_KEY: str = "secret-key-for-dev-only-change-in-prod"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 30
+    JWT_PRIVATE_KEY: str | None = None
+    JWT_PUBLIC_KEY: str | None = None
+    JWT_ACCESS_TTL: int = 900  # 15 minutes
     
     # Auth
     AUTH_CODE_EXPIRE_SECONDS: int = 600 # 10 minutes
+    SUPERUSER_EMAIL: str | None = None
 
     # Email (Resend)
     RESEND_API_KEY: str | None = None

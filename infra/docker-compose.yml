@@ -4,8 +4,10 @@ services:
     build:
       context: ..
       dockerfile: infra/docker/api.Dockerfile
+    networks:
+      - planetic-net
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     volumes:
       # Прокидываем код бэкенда для авторелоада (Hot Reload)
       - ../backend:/app/backend
@@ -26,6 +28,8 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=ark
+    networks:
+      - planetic-net
     ports:
       - "127.0.0.1:5432:5432"
     volumes:
@@ -34,6 +38,8 @@ services:
   # Redis (для pub/sub и кэша)
   redis:
     image: redis:7-alpine
+    networks:
+      - planetic-net
     ports:
       - "127.0.0.1:6379:6379"
     volumes:
@@ -42,3 +48,7 @@ services:
 volumes:
   postgres_data:
   redis_data:
+
+networks:
+  planetic-net:
+    external: true

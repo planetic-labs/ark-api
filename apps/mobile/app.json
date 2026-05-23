@@ -2,7 +2,7 @@
   "expo": {
     "name": "Ark Messenger",
     "slug": "ark",
-    "version": "2026.5.17",
+    "version": "2026.5.23",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -15,7 +15,8 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.planeticlabs.ark"
     },
     "android": {
       "package": "com.planeticlabs.ark",
@@ -28,6 +29,12 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
+    "updates": {
+      "url": "https://u.expo.dev/2f1240a1-b669-41d1-98b2-647a16cf399f",
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 3000
+    },
+    "runtimeVersion": "1.0.0",
     "extra": {
       "eas": {
         "projectId": "2f1240a1-b669-41d1-98b2-647a16cf399f"
@@ -36,7 +43,8 @@
     },
     "scheme": "ark-messenger",
     "plugins": [
-      "expo-router"
+      "expo-router",
+      "expo-font"
     ],
     "owner": "planetic-labs"
   }

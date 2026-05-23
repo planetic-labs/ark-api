@@ -75,3 +75,7 @@ yarn-error.log*
 pnpm-debug.log*
 
 tmp/
+apps/mobile/.env.preview
+mockups/
+.antigravityignore
+.antigravitycli/
