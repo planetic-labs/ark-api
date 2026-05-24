@@ -4,6 +4,7 @@ services:
     build:
       context: ..
       dockerfile: infra/docker/api.Dockerfile
+    user: "${CURRENT_UID:-1000}:${CURRENT_GID:-1000}"
     networks:
       - planetic-net
     ports:
@@ -50,6 +51,7 @@ services:
     build:
       context: ..
       dockerfile: infra/docker/api.Dockerfile
+    user: "${CURRENT_UID:-1000}:${CURRENT_GID:-1000}"
     networks:
       - planetic-net
     volumes:
