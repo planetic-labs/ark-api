@@ -3,33 +3,60 @@ import base64
 import hashlib
 from datetime import datetime, timedelta, timezone
 from typing import Any
+from pathlib import Path
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives import serialization
 from backend.core.config import settings
 
 ALGORITHM = "RS256"
 
-# Generate temporary key pair for development fallback
-_temp_private_key = rsa.generate_private_key(
-    public_exponent=65537,
-    key_size=2048
-)
-_temp_private_pem = _temp_private_key.private_bytes(
-    encoding=serialization.Encoding.PEM,
-    format=serialization.PrivateFormat.PKCS8,
-    encryption_algorithm=serialization.NoEncryption()
-).decode("utf-8")
+# Try loading persistent keys for development fallback, otherwise generate once and save
+_key_dir = Path(__file__).resolve().parents[1] / ".keys"
+_private_key_path = _key_dir / "private.pem"
+_public_key_path = _key_dir / "public.pem"
 
-_temp_public_pem = _temp_private_key.public_key().public_bytes(
-    encoding=serialization.Encoding.PEM,
-    format=serialization.PublicFormat.SubjectPublicKeyInfo
-).decode("utf-8")
+_temp_private_pem = ""
+_temp_public_pem = ""
+
+if _private_key_path.exists() and _public_key_path.exists():
+    try:
+        _temp_private_pem = _private_key_path.read_text(encoding="utf-8")
+        _temp_public_pem = _public_key_path.read_text(encoding="utf-8")
+    except Exception:
+        pass
+
+if not _temp_private_pem or not _temp_public_pem:
+    _temp_private_key = rsa.generate_private_key(
+        public_exponent=65537,
+        key_size=2048
+    )
+    _temp_private_pem = _temp_private_key.private_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PrivateFormat.PKCS8,
+        encryption_algorithm=serialization.NoEncryption()
+    ).decode("utf-8")
+
+    _temp_public_pem = _temp_private_key.public_key().public_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PublicFormat.SubjectPublicKeyInfo
+    ).decode("utf-8")
+
+    try:
+        _key_dir.mkdir(parents=True, exist_ok=True)
+        _private_key_path.write_text(_temp_private_pem, encoding="utf-8")
+        _public_key_path.write_text(_temp_public_pem, encoding="utf-8")
+    except Exception:
+        pass
 
 def get_private_key() -> str:
     return settings.JWT_PRIVATE_KEY or _temp_private_pem
 
 def get_public_key() -> str:
     return settings.JWT_PUBLIC_KEY or _temp_public_pem
+
+def get_kid() -> str:
+    pub_key = get_public_key()
+    return hashlib.sha256(pub_key.encode("utf-8")).hexdigest()[:16]
 
 def create_access_token(
     subject: str,
@@ -60,7 +87,7 @@ def create_access_token(
         to_encode,
         get_private_key(),
         algorithm=ALGORITHM,
-        headers={"kid": "default-key-id"}
+        headers={"kid": get_kid()}
     )
     return encoded_jwt
 
@@ -92,7 +119,7 @@ def get_jwks() -> dict:
         "kty": "RSA",
         "alg": "RS256",
         "use": "sig",
-        "kid": "default-key-id",
+        "kid": get_kid(),
         "n": b64url(numbers.n),
         "e": b64url(numbers.e)
     }
