@@ -39,3 +39,30 @@ async def delete_setup_token(token_id: str) -> None:
     async with get_redis_client() as client:
         key = f"auth:setup:{token_id}"
         await client.delete(key)
+
+_arq_pool = None
+
+async def get_arq_pool():
+    global _arq_pool
+    if _arq_pool is None:
+        from arq import create_pool
+        from arq.connections import RedisSettings
+        redis_settings = RedisSettings.from_dsn(settings.REDIS_URL)
+        _arq_pool = await create_pool(redis_settings)
+    return _arq_pool
+
+async def enqueue_revocation_webhook(
+    user_id: str, 
+    jti: str | None, 
+    webhook_url: str, 
+    webhook_secret: str
+) -> None:
+    pool = await get_arq_pool()
+    await pool.enqueue_job(
+        "send_webhook_revocation", 
+        user_id=user_id, 
+        jti=jti, 
+        webhook_url=webhook_url, 
+        webhook_secret=webhook_secret
+    )
+

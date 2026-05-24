@@ -244,6 +244,79 @@ async def test_auth_logout(client, db):
     assert result.scalar_one_or_none() is None
 
 @pytest.mark.asyncio
+async def test_auth_logout_webhook_enqueued(client, db, monkeypatch):
+    from unittest.mock import AsyncMock
+    import backend.core.redis as r
+    from backend.modules.auth.models import WebhookClient
+    
+    mock_enqueue = AsyncMock()
+    monkeypatch.setattr(r, "enqueue_revocation_webhook", mock_enqueue)
+    
+    # Добавляем вебхуки в тестовую БД
+    webhook1 = WebhookClient(name="Service 1", url="http://webhook1.com", secret_key="secret1", is_active=True)
+    webhook2 = WebhookClient(name="Service 2", url="http://webhook2.com", secret_key="secret2", is_active=True)
+    webhook_inactive = WebhookClient(name="Inactive Service", url="http://inactive.com", secret_key="secret3", is_active=False)
+    db.add(webhook1)
+    db.add(webhook2)
+    db.add(webhook_inactive)
+    await db.commit()
+    
+    role = Role(name="student", is_default=True)
+    db.add(role)
+    user = User(
+        email="logout_webhook@ark.com",
+        status="active",
+        is_active=True
+    )
+    user.roles.append(role)
+    db.add(user)
+    await db.commit()
+
+    import ulid
+    from datetime import datetime, timedelta, timezone
+    
+    refresh_token_id = str(ulid.ULID())
+    refresh_token_str = "logout-webhook-refresh"
+    refresh_token_hash = hash_token(refresh_token_str)
+    
+    db_token = RefreshToken(
+        id=refresh_token_id,
+        token_hash=refresh_token_hash,
+        user_id=user.id,
+        expires_at=datetime.now(timezone.utc) + timedelta(days=7)
+    )
+    db.add(db_token)
+    await db.commit()
+
+    access_token = create_access_token(
+        subject=user.id,
+        roles=["student"],
+        status=user.status,
+        jti=refresh_token_id
+    )
+
+    response = await client.post(
+        "/api/v1/auth/logout",
+        headers={"Authorization": f"Bearer {access_token}"}
+    )
+    assert response.status_code == 200
+    
+    # Должен быть вызван только для 2-х активных вебхуков
+    assert mock_enqueue.call_count == 2
+    mock_enqueue.assert_any_call(
+        user_id=user.id,
+        jti=refresh_token_id,
+        webhook_url="http://webhook1.com",
+        webhook_secret="secret1"
+    )
+    mock_enqueue.assert_any_call(
+        user_id=user.id,
+        jti=refresh_token_id,
+        webhook_url="http://webhook2.com",
+        webhook_secret="secret2"
+    )
+
+@pytest.mark.asyncio
 async def test_rbac_permissions(client, db):
     # Create two users: student and admin
     admin_role = Role(name="admin", is_system=True)

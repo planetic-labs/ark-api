@@ -234,7 +234,24 @@ class AuthService:
         )
         db_token = result.scalar_one_or_none()
         if db_token:
+            user_id = db_token.user_id
             await self.session.delete(db_token)
             await self.session.commit()
+            
+            from backend.modules.auth.models import WebhookClient
+            webhooks_result = await self.session.execute(
+                select(WebhookClient).where(WebhookClient.is_active == True)
+            )
+            webhooks = webhooks_result.scalars().all()
+            
+            from backend.core.redis import enqueue_revocation_webhook
+            for webhook in webhooks:
+                await enqueue_revocation_webhook(
+                    user_id=user_id,
+                    jti=jti,
+                    webhook_url=webhook.url,
+                    webhook_secret=webhook.secret_key
+                )
+            
             return True
         return False

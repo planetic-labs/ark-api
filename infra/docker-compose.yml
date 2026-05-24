@@ -45,6 +45,25 @@ services:
     volumes:
       - redis_data:/data
 
+  # Воркер фоновых задач ARQ
+  worker:
+    build:
+      context: ..
+      dockerfile: infra/docker/api.Dockerfile
+    networks:
+      - planetic-net
+    volumes:
+      - ../backend:/app/backend
+    env_file:
+      - ../backend/.env
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/ark
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - db
+      - redis
+    command: ["uv", "run", "--project", "backend", "arq", "backend.core.worker.WorkerSettings"]
+
 volumes:
   postgres_data:
   redis_data:

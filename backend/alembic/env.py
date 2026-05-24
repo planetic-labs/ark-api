@@ -11,7 +11,7 @@ from backend.core.config import settings
 from backend.core.models import Base
 # Import all models to ensure they are registered with Base.metadata
 from backend.modules.users.models import User
-from backend.modules.auth.models import RefreshToken
+from backend.modules.auth.models import RefreshToken, WebhookClient
 from backend.modules.messaging.models import Chat, Message
 
 # this is the Alembic Config object
