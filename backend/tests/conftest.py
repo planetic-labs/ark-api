@@ -64,7 +64,8 @@ async def clean_database():
         "users",
         "roles",
         "permissions",
-        "service_clients"
+        "service_clients",
+        "webhook_clients"
     ]
     async with TestingSessionLocal() as session:
         for table in tables:

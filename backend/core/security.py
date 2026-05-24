@@ -56,7 +56,12 @@ def create_access_token(
     if jti:
         to_encode["jti"] = jti
         
-    encoded_jwt = jwt.encode(to_encode, get_private_key(), algorithm=ALGORITHM)
+    encoded_jwt = jwt.encode(
+        to_encode,
+        get_private_key(),
+        algorithm=ALGORITHM,
+        headers={"kid": "default-key-id"}
+    )
     return encoded_jwt
 
 def create_refresh_token() -> str:
