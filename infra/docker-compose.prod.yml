@@ -42,7 +42,7 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    command: ["uv", "run", "--project", "backend", "alembic", "upgrade", "head"]
+    command: ["uv", "run", "--project", "backend", "alembic", "-c", "backend/alembic.ini", "upgrade", "head"]
 
   # Бэкенд (FastAPI)
   api:
