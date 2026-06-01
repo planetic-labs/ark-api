@@ -1,0 +1,56 @@
+name: Build and Push Docker Image
+
+on:
+  release:
+    types: [published, created]
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract tag name
+        id: get_tag
+        run: |
+          TAG_NAME="${{ github.event.release.tag_name }}"
+          if [ -z "$TAG_NAME" ]; then
+            TAG_NAME="${{ github.ref_name }}"
+          fi
+          echo "tag=$TAG_NAME" >> $GITHUB_OUTPUT
+          # Convert repository owner to lowercase for Docker image registry compatibility
+          OWNER_LOWERCASE=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          echo "owner=$OWNER_LOWERCASE" >> $GITHUB_OUTPUT
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: infra/docker/api.Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ steps.get_tag.outputs.owner }}/ark-api:${{ steps.get_tag.outputs.tag }}
+            ghcr.io/${{ steps.get_tag.outputs.owner }}/ark-api:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
