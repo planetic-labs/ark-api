@@ -15,7 +15,9 @@ services:
     depends_on:
       - db
       - redis
-    command: ["uv", "run", "--project", "backend", "fastapi", "run", "backend/main.py", "--host", "0.0.0.0", "--port", "8000"]
+    command: >
+      sh -c "uv run --project backend alembic upgrade head &&
+             uv run --project backend fastapi run backend/main.py --host 0.0.0.0 --port 8000"
 
   # База данных PostgreSQL
   db:
