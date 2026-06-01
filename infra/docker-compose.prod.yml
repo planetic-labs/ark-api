@@ -1,24 +1,4 @@
 services:
-  # Бэкенд (FastAPI)
-  api:
-    image: ghcr.io/${GH_OWNER:-planetic-labs}/ark-api:${IMAGE_TAG:-latest}
-    restart: always
-    networks:
-      - planetic-net
-    ports:
-      - "127.0.0.1:${API_PORT:-8383}:8000"
-    env_file:
-      - .env
-    environment:
-      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
-      - REDIS_URL=redis://redis:6379/0
-    depends_on:
-      - db
-      - redis
-    command: >
-      sh -c "uv run --project backend alembic upgrade head &&
-             uv run --project backend fastapi run backend/main.py --host 0.0.0.0 --port 8000"
-
   # База данных PostgreSQL
   db:
     image: postgres:16-alpine
@@ -33,6 +13,11 @@ services:
       - "127.0.0.1:5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   # Redis (для pub/sub, кэша и очередей)
   redis:
@@ -44,6 +29,40 @@ services:
       - "127.0.0.1:6379:6379"
     volumes:
       - redis_data:/data
+
+  # Init-контейнер для автоматического наката миграций Alembic
+  db-migrate:
+    image: ghcr.io/${GH_OWNER:-planetic-labs}/ark-api:${IMAGE_TAG:-latest}
+    networks:
+      - planetic-net
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ["uv", "run", "--project", "backend", "alembic", "upgrade", "head"]
+
+  # Бэкенд (FastAPI)
+  api:
+    image: ghcr.io/${GH_OWNER:-planetic-labs}/ark-api:${IMAGE_TAG:-latest}
+    restart: always
+    networks:
+      - planetic-net
+    ports:
+      - "127.0.0.1:${API_PORT:-8383}:8000"
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      db-migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_started
+    command: ["uv", "run", "--project", "backend", "fastapi", "run", "backend/main.py", "--host", "0.0.0.0", "--port", "8000"]
 
   # Воркер фоновых задач ARQ
   worker:
@@ -57,8 +76,10 @@ services:
       - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
       - REDIS_URL=redis://redis:6379/0
     depends_on:
-      - db
-      - redis
+      db-migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_started
     command: ["uv", "run", "--project", "backend", "arq", "backend.core.worker.WorkerSettings"]
 
 volumes:
