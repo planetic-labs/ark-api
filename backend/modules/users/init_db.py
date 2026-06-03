@@ -11,7 +11,10 @@ async def create_superuser_if_not_exists() -> None:
         logger.info("SUPERUSER_EMAIL is not configured, skipping superuser auto-creation")
         return
 
-    email = settings.SUPERUSER_EMAIL.strip().lower()
+    emails = [e.strip().lower() for e in settings.SUPERUSER_EMAIL.split(",") if e.strip()]
+    if not emails:
+        logger.info("SUPERUSER_EMAIL is empty, skipping superuser auto-creation")
+        return
     
     async with AsyncSessionLocal() as session:
         try:
@@ -38,51 +41,52 @@ async def create_superuser_if_not_exists() -> None:
                     logger.info("Created system role", role_name=r_data["name"])
                 roles_map[r_data["name"]] = role
 
-            # 2. Check if superuser already exists
-            result = await session.execute(
-                select(User).where(User.email == email)
-            )
-            superuser = result.scalar_one_or_none()
-
             admin_role = roles_map["admin"]
 
-            if not superuser:
-                # Create superuser
-                superuser = User(
-                    email=email,
-                    is_active=True,
-                    is_approved=True,
-                    email_verified=True,
-                    status="active",
-                    name="Admin"
+            # 2. Check and create/update superusers
+            for email in emails:
+                result = await session.execute(
+                    select(User).where(User.email == email)
                 )
-                superuser.roles.append(admin_role)
-                session.add(superuser)
-                logger.info("Superuser created successfully", email=email)
-            else:
-                # Update status and role if needed
-                updated = False
-                if not superuser.is_approved:
-                    superuser.is_approved = True
-                    updated = True
-                if not superuser.is_active:
-                    superuser.is_active = True
-                    updated = True
-                if superuser.status != "active":
-                    superuser.status = "active"
-                    updated = True
-                if not superuser.email_verified:
-                    superuser.email_verified = True
-                    updated = True
-                if admin_role not in superuser.roles:
+                superuser = result.scalar_one_or_none()
+
+                if not superuser:
+                    # Create superuser
+                    superuser = User(
+                        email=email,
+                        is_active=True,
+                        is_approved=True,
+                        email_verified=True,
+                        status="active",
+                        name="Admin"
+                    )
                     superuser.roles.append(admin_role)
-                    updated = True
-                
-                if updated:
-                    logger.info("Superuser configuration updated to match admin parameters", email=email)
+                    session.add(superuser)
+                    logger.info("Superuser created successfully", email=email)
+                else:
+                    # Update status and role if needed
+                    updated = False
+                    if not superuser.is_approved:
+                        superuser.is_approved = True
+                        updated = True
+                    if not superuser.is_active:
+                        superuser.is_active = True
+                        updated = True
+                    if superuser.status != "active":
+                        superuser.status = "active"
+                        updated = True
+                    if not superuser.email_verified:
+                        superuser.email_verified = True
+                        updated = True
+                    if admin_role not in superuser.roles:
+                        superuser.roles.append(admin_role)
+                        updated = True
+                    
+                    if updated:
+                        logger.info("Superuser configuration updated to match admin parameters", email=email)
 
             await session.commit()
         except Exception as e:
             await session.rollback()
-            logger.error("Failed to initialize roles or superuser", error=str(e))
+            logger.error("Failed to initialize roles or superusers", error=str(e))
             raise e

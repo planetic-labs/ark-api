@@ -412,3 +412,34 @@ async def test_approved_user_restriction(client, db):
     )
     assert response.status_code == 200
     assert response.json()["email"] == "unapproved@ark.com"
+
+
+@pytest.mark.asyncio
+async def test_create_superuser_multiple(db, monkeypatch):
+    from backend.modules.users.init_db import create_superuser_if_not_exists
+    from backend.core.config import settings
+
+    # Setup: mock settings.SUPERUSER_EMAIL with multiple comma-separated emails
+    monkeypatch.setattr(settings, "SUPERUSER_EMAIL", "admin1@ark.com, admin2@ark.com")
+
+    # Run superuser creation
+    await create_superuser_if_not_exists()
+
+    # Check both users exist in DB with the admin role
+    # User 1
+    result = await db.execute(select(User).where(User.email == "admin1@ark.com"))
+    user1 = result.scalar_one_or_none()
+    assert user1 is not None
+    assert user1.is_approved is True
+    assert user1.is_active is True
+    assert user1.status == "active"
+    assert any(r.name == "admin" for r in user1.roles)
+
+    # User 2
+    result = await db.execute(select(User).where(User.email == "admin2@ark.com"))
+    user2 = result.scalar_one_or_none()
+    assert user2 is not None
+    assert user2.is_approved is True
+    assert user2.is_active is True
+    assert user2.status == "active"
+    assert any(r.name == "admin" for r in user2.roles)
