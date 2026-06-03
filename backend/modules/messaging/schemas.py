@@ -26,6 +26,7 @@ class MessageCreateSchema(MessageBaseSchema):
 class MessageSchema(MessageBaseSchema):
     id: str
     sender_id: str
+    sender: UserSchema | None = None
     created_at: datetime
     
     model_config = ConfigDict(from_attributes=True)

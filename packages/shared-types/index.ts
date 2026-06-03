@@ -13,6 +13,8 @@ export interface User {
   is_active: boolean;
   is_approved: boolean;
   created_at: string; // ISO Date
+  roles?: string[];
+  personal_permissions?: string[];
 }
 
 export interface Chat {
@@ -26,6 +28,7 @@ export interface Message {
   id: string; // ULID
   chat_id: string;
   sender_id: string;
+  sender?: User;
   content: string;
   parent_id: string | null;
   created_at: string; // ISO Date
