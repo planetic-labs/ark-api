@@ -1,3 +1,14 @@
 packages:
   - "apps/*"
   - "packages/*"
+
+allowBuilds:
+  msgpackr-extract: true
+  sharp: true
+  unrs-resolver: true
+
+overrides:
+  react: "19.2.3"
+  react-dom: "19.2.3"
+  postcss: "^8.5.10"
+  uuid: "^11.1.1"
