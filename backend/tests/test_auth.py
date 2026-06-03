@@ -445,3 +445,91 @@ async def test_create_superuser_multiple(db, monkeypatch):
     assert user2.is_active is True
     assert user2.status == "active"
     assert any(r.name == "admin" for r in user2.roles)
+
+
+@pytest.mark.asyncio
+async def test_auth_verify_code_brute_force(client, db):
+    # Setup: Create a registered user
+    role = Role(name="student", is_default=True)
+    db.add(role)
+    user = User(
+        email="bruteforce@ark.com",
+        status="active",
+        is_active=True,
+        is_approved=True
+    )
+    user.roles.append(role)
+    db.add(user)
+    await db.commit()
+
+    # Identify to generate a code
+    response = await client.post("/api/v1/auth/identify", json={"email": "bruteforce@ark.com"})
+    assert response.status_code == 200
+    
+    # Try verifying with incorrect code 5 times
+    for _ in range(5):
+        response = await client.post("/api/v1/auth/verify-code", json={
+            "email": "bruteforce@ark.com",
+            "code": "000000"
+        })
+        assert response.status_code == 401
+
+    # Now verify with the correct code should fail because it was deleted
+    code = await get_auth_code("bruteforce@ark.com")
+    assert code is None
+
+
+@pytest.mark.asyncio
+async def test_messaging_chat_messages_bola(client, db):
+    from backend.modules.messaging.models import Chat, Message, chat_members
+    
+    role = Role(name="student", is_default=True)
+    db.add(role)
+    
+    # Create two active users
+    user_a = User(email="user_a@ark.com", status="active", is_active=True, is_approved=True)
+    user_b = User(email="user_b@ark.com", status="active", is_active=True, is_approved=True)
+    user_a.roles.append(role)
+    user_b.roles.append(role)
+    db.add(user_a)
+    db.add(user_b)
+    await db.commit()
+    await db.refresh(user_a)
+    await db.refresh(user_b)
+
+    # Create a chat with user_a only
+    chat = Chat(name="User A Private Chat", is_group=False)
+    db.add(chat)
+    await db.commit()
+    await db.refresh(chat)
+
+    await db.execute(chat_members.insert().values(chat_id=chat.id, user_id=user_a.id))
+    await db.commit()
+
+    # User A sends a message
+    msg = Message(chat_id=chat.id, sender_id=user_a.id, content="Secret message")
+    db.add(msg)
+    await db.commit()
+
+    # Authenticate as user_b
+    token_b = create_access_token(subject=user_b.id, roles=["student"], status="active")
+
+    # User B requests messages for Chat A -> 403 Forbidden
+    response = await client.get(
+        f"/api/v1/messaging/chats/{chat.id}/messages",
+        headers={"Authorization": f"Bearer {token_b}"}
+    )
+    assert response.status_code == 403
+    assert response.json()["detail"] == "User not in chat"
+
+    # Authenticate as user_a
+    token_a = create_access_token(subject=user_a.id, roles=["student"], status="active")
+
+    # User A requests messages for Chat A -> 200 OK
+    response = await client.get(
+        f"/api/v1/messaging/chats/{chat.id}/messages",
+        headers={"Authorization": f"Bearer {token_a}"}
+    )
+    assert response.status_code == 200
+    assert len(response.json()) == 1
+    assert response.json()[0]["content"] == "Secret message"

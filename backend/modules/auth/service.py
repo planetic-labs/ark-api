@@ -41,6 +41,10 @@ class AuthService:
         code = "".join([secrets.choice("0123456789") for _ in range(6)])
         await set_auth_code(email, code)
         
+        from backend.core.redis import get_redis_client
+        async with get_redis_client() as redis_client:
+            await redis_client.delete(f"auth:attempts:{email}")
+        
         print(f"DEBUG: Auth code for {email} is {code}")
         
         if settings.RESEND_API_KEY:
@@ -60,11 +64,30 @@ class AuthService:
         return {"next": "enter_code"}
 
     async def verify_code(self, email: str, code: str) -> dict | None:
-        saved_code = await get_auth_code(email)
-        if not saved_code or saved_code != code:
-            return None
+        from backend.core.redis import get_redis_client
+        attempts_key = f"auth:attempts:{email}"
+        
+        async with get_redis_client() as redis_client:
+            attempts_str = await redis_client.get(attempts_key)
+            attempts = int(attempts_str) if attempts_str else 0
             
-        await delete_auth_code(email)
+            if attempts >= 5:
+                await delete_auth_code(email)
+                return None
+                
+            saved_code = await get_auth_code(email)
+            if not saved_code:
+                return None
+                
+            if saved_code != code:
+                attempts += 1
+                await redis_client.set(attempts_key, attempts, ex=600)
+                if attempts >= 5:
+                    await delete_auth_code(email)
+                return None
+                
+            await delete_auth_code(email)
+            await redis_client.delete(attempts_key)
         
         result = await self.session.execute(select(User).where(User.email == email))
         user = result.scalar_one_or_none()
@@ -188,7 +211,7 @@ class AuthService:
             
         result = await self.session.execute(select(User).where(User.id == db_token.user_id))
         user = result.scalar_one_or_none()
-        if not user or user.status == 'disabled':
+        if not user or user.status == 'disabled' or not user.is_active:
             return None
             
         await self.session.delete(db_token)
@@ -227,15 +250,23 @@ class AuthService:
             "expires_in": settings.JWT_ACCESS_TTL
         }
 
-    async def logout(self, jti: str) -> bool:
-        if not jti:
-            return False
-        result = await self.session.execute(
-            select(RefreshToken).where(RefreshToken.id == jti)
-        )
-        db_token = result.scalar_one_or_none()
+    async def logout(self, jti: str | None = None, refresh_token_str: str | None = None) -> bool:
+        db_token = None
+        if jti:
+            result = await self.session.execute(
+                select(RefreshToken).where(RefreshToken.id == jti)
+            )
+            db_token = result.scalar_one_or_none()
+        elif refresh_token_str:
+            token_hash = hash_token(refresh_token_str)
+            result = await self.session.execute(
+                select(RefreshToken).where(RefreshToken.token_hash == token_hash)
+            )
+            db_token = result.scalar_one_or_none()
+            
         if db_token:
             user_id = db_token.user_id
+            token_id = db_token.id
             await self.session.delete(db_token)
             await self.session.commit()
             
@@ -249,7 +280,7 @@ class AuthService:
             for webhook in webhooks:
                 await enqueue_revocation_webhook(
                     user_id=user_id,
-                    jti=jti,
+                    jti=token_id,
                     webhook_url=webhook.url,
                     webhook_secret=webhook.secret_key
                 )

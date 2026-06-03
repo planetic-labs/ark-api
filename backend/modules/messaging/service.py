@@ -141,7 +141,18 @@ class MessagingService:
                     await self._broadcast_message(new_msg, chat_id, session)
                     break
 
-    async def get_chat_messages(self, chat_id: str, limit: int = 50) -> list[Message]:
+    async def get_chat_messages(self, chat_id: str, user_id: str, limit: int = 50) -> list[Message]:
+        membership = await self.session.execute(
+            select(chat_members).where(
+                and_(
+                    chat_members.c.chat_id == chat_id,
+                    chat_members.c.user_id == user_id
+                )
+            )
+        )
+        if not membership.first():
+            raise Exception("User not in chat")
+
         result = await self.session.execute(
             select(Message)
             .options(selectinload(Message.sender))

@@ -1,4 +1,6 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import field_validator
+from typing import Any
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "Ark Messenger"
@@ -6,13 +8,14 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
 
     # Database
-    DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@db:5432/ark"
+    DATABASE_URL: str
     
     # Redis
-    REDIS_URL: str = "redis://redis:6379/0"
+    REDIS_URL: str
 
     # Security
-    SECRET_KEY: str = "secret-key-for-dev-only-change-in-prod"
+    SECRET_KEY: str
+    ALLOWED_ORIGINS: str
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 30
     JWT_PRIVATE_KEY: str | None = None
@@ -20,12 +23,18 @@ class Settings(BaseSettings):
     JWT_ACCESS_TTL: int = 900  # 15 minutes
     
     # Auth
+    # Auth
     AUTH_CODE_EXPIRE_SECONDS: int = 600 # 10 minutes
     SUPERUSER_EMAIL: str | None = None
 
     # Email (Resend)
+    # Email (Resend)
     RESEND_API_KEY: str | None = None
     EMAIL_FROM: str = "Ark Messenger <onboarding@resend.dev>" # Default resend test email
+
+    @property
+    def allowed_origins_list(self) -> list[str]:
+        return [x.strip() for x in self.ALLOWED_ORIGINS.split(",") if x.strip()]
 
     model_config = SettingsConfigDict(env_file=".env", case_sensitive=True)
 

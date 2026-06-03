@@ -30,7 +30,7 @@ async def send_webhook_revocation(
         "user_id": user_id,
         "jti": jti
     }
-    payload_str = json.dumps(payload_data)
+    payload_str = json.dumps(payload_data, sort_keys=True)
     
     # Генерация HMAC-SHA256 подписи
     signature = hmac.new(

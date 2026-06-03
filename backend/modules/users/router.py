@@ -120,6 +120,12 @@ async def update_user(
     if body.status is not None:
         user.status = body.status
         
+    if body.is_active is False or body.status == "disabled":
+        from backend.modules.auth.models import RefreshToken
+        await session.execute(
+            sa.delete(RefreshToken).where(RefreshToken.user_id == user_id)
+        )
+        
     if body.roles is not None:
         user.roles = []
         for r_name in body.roles:
@@ -164,6 +170,11 @@ async def delete_user(
     user.status = "disabled"
     from datetime import datetime
     user.deleted_at = datetime.utcnow()
+    
+    from backend.modules.auth.models import RefreshToken
+    await session.execute(
+        sa.delete(RefreshToken).where(RefreshToken.user_id == user_id)
+    )
     
     await session.commit()
     return user

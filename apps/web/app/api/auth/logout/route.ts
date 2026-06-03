@@ -4,21 +4,24 @@ import { cookies } from 'next/headers';
 export async function POST() {
   const cookieStore = await cookies();
   const accessToken = cookieStore.get('access_token')?.value;
+  const refreshToken = cookieStore.get('refresh_token')?.value;
 
-  if (accessToken) {
-    // Notify backend
-    try {
-      const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
-      await fetch(`${backendUrl}/auth/logout`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`
-        }
-      });
-    } catch (e) {
-      // Ignore backend logout errors, proceed to clear local session
+  try {
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (accessToken) {
+      headers['Authorization'] = `Bearer ${accessToken}`;
     }
+    
+    await fetch(`${backendUrl}/auth/logout`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ refresh_token: refreshToken || null }),
+    });
+  } catch (e) {
+    // Ignore backend logout errors, proceed to clear local session
   }
 
   const response = NextResponse.json({ message: 'Logged out successfully' });
