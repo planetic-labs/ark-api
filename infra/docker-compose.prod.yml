@@ -1,7 +1,10 @@
 services:
   # База данных PostgreSQL
   db:
-    image: postgres:16-alpine
+    build:
+      context: ..
+      dockerfile: infra/docker/postgres.Dockerfile
+    command: ["postgres", "-c", "shared_preload_libraries=pg_partman_bgw", "-c", "pg_partman_bgw.dbname=${POSTGRES_DB}", "-c", "pg_partman_bgw.role=${POSTGRES_USER}"]
     restart: always
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
@@ -12,7 +15,7 @@ services:
     ports:
       - "127.0.0.1:5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s

@@ -38,6 +38,10 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('chat_id', 'user_id')
     )
+    # Enable pg_partman extension
+    op.execute("CREATE SCHEMA IF NOT EXISTS partman;")
+    op.execute("CREATE EXTENSION IF NOT EXISTS pg_partman SCHEMA partman;")
+
     op.create_table('messages',
     sa.Column('id', sa.String(length=26), nullable=False),
     sa.Column('content', sa.String(length=4000), nullable=False),
@@ -48,10 +52,20 @@ def upgrade() -> None:
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('deleted_at', sa.DateTime(timezone=True), nullable=True),
     sa.ForeignKeyConstraint(['chat_id'], ['chats.id'], ondelete='CASCADE'),
-    sa.ForeignKeyConstraint(['parent_id'], ['messages.id'], ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['sender_id'], ['users.id'], ondelete='SET NULL'),
-    sa.PrimaryKeyConstraint('id')
+    sa.PrimaryKeyConstraint('id', 'created_at'),
+    postgresql_partition_by='RANGE (created_at)'
     )
+
+    # Register table with pg_partman for monthly partitioning with 3 premade partitions
+    op.execute("""
+        SELECT partman.create_parent(
+            p_parent_table => 'public.messages',
+            p_control => 'created_at',
+            p_interval => '1 month',
+            p_premake => 3
+        );
+    """)
     # ### end Alembic commands ###
 
 

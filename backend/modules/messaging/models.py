@@ -1,6 +1,6 @@
 from datetime import datetime
 from sqlalchemy import String, ForeignKey, Table, Column, DateTime, func
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship, foreign, remote
 from backend.core.models import Base, pk_ulid
 
 # Association table for group chat members
@@ -33,11 +33,16 @@ class Message(Base):
     __tablename__ = "messages"
 
     id: Mapped[pk_ulid]
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), 
+        primary_key=True, 
+        server_default=func.now()
+    )
     content: Mapped[str] = mapped_column(String(4000))
     sender_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
     chat_id: Mapped[str] = mapped_column(ForeignKey("chats.id", ondelete="CASCADE"))
     
-    # For threads
+    # For threads (logical key, no physical FK constraint in DB migrations because of table partitioning)
     parent_id: Mapped[str | None] = mapped_column(ForeignKey("messages.id", ondelete="CASCADE"))
 
     # Relationships
