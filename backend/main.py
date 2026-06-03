@@ -8,6 +8,7 @@ import jwt
 # Setup logging
 logger = structlog.get_logger()
 
+from backend.core.config import settings
 from backend.modules.auth.router import router as auth_router
 from backend.modules.users.router import router as users_router
 from backend.modules.messaging.router import router as messaging_router
@@ -18,6 +19,9 @@ app = FastAPI(
     title="Ark Messenger API",
     version="2026.5.23",
     description="Corporate messenger backend for closed communities",
+    docs_url="/docs" if settings.DEBUG else None,
+    redoc_url="/redoc" if settings.DEBUG else None,
+    openapi_url="/openapi.json" if settings.DEBUG else None,
 )
 
 @app.on_event("startup")
@@ -72,8 +76,6 @@ async def global_exception_handler(request: Request, exc: Exception):
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(users_router, prefix="/api/v1")
 app.include_router(messaging_router, prefix="/api/v1")
-
-from backend.core.config import settings
 
 # CORS configuration
 app.add_middleware(

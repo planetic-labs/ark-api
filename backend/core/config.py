@@ -13,6 +13,9 @@ class Settings(BaseSettings):
     # Redis
     REDIS_URL: str
 
+    # Debug mode (controls interactive docs visibility)
+    DEBUG: bool = False
+
     # Security
     SECRET_KEY: str
     ALLOWED_ORIGINS: str
