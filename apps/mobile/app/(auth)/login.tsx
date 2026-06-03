@@ -19,7 +19,10 @@ import { COLORS, FONTS } from '../../constants/Config';
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
-  const [fullName, setFullName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [isFirstNameFocused, setIsFirstNameFocused] = useState(false);
+  const [isLastNameFocused, setIsLastNameFocused] = useState(false);
   const [step, setStep] = useState<'email' | 'code' | 'profile' | 'waiting'>('email');
   const [loading, setLoading] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
@@ -122,13 +125,13 @@ export default function LoginScreen() {
   };
 
   const handleProfileSubmit = async () => {
-    if (!fullName.trim()) {
-      Alert.alert('Ошибка', 'Пожалуйста, введите имя');
+    if (!firstName.trim() || !lastName.trim()) {
+      Alert.alert('Ошибка', 'Пожалуйста, введите имя и фамилию');
       return;
     }
     setLoading(true);
     try {
-      const tokens = await api.auth.setup(setupToken, fullName.trim(), undefined);
+      const tokens = await api.auth.setup(setupToken, firstName.trim(), lastName.trim(), undefined);
       if (!tokens) {
         throw new Error('Не удалось завершить регистрацию');
       }
@@ -296,24 +299,36 @@ export default function LoginScreen() {
 
       <Text style={styles.label}>Имя</Text>
       <TextInput
-        style={[styles.input, isFocused && styles.inputFocused]}
-        placeholder="Алексей Прусиков"
+        style={[styles.input, isFirstNameFocused && styles.inputFocused]}
+        placeholder="Алексей"
         placeholderTextColor={COLORS.textFaint}
-        value={fullName}
-        onChangeText={setFullName}
+        value={firstName}
+        onChangeText={setFirstName}
         autoCapitalize="words"
-        onFocus={() => setIsFocused(true)}
-        onBlur={() => setIsFocused(false)}
+        onFocus={() => setIsFirstNameFocused(true)}
+        onBlur={() => setIsFirstNameFocused(false)}
+      />
+
+      <Text style={styles.label}>Фамилия</Text>
+      <TextInput
+        style={[styles.input, isLastNameFocused && styles.inputFocused]}
+        placeholder="Прусиков"
+        placeholderTextColor={COLORS.textFaint}
+        value={lastName}
+        onChangeText={setLastName}
+        autoCapitalize="words"
+        onFocus={() => setIsLastNameFocused(true)}
+        onBlur={() => setIsLastNameFocused(false)}
       />
 
       <Text style={styles.fieldFootnote}>
-        Имя можно изменить позже в профиле. Полное имя предпочтительнее: внутри Ковчега — обращение по именам, не по никам.
+        Имя и фамилию можно изменить позже в профиле. По правилам общины вводите свои настоящие имя и фамилию.
       </Text>
 
       <TouchableOpacity 
         style={styles.button} 
         onPress={handleProfileSubmit}
-        disabled={!fullName.trim()}
+        disabled={!firstName.trim() || !lastName.trim()}
       >
         <Text style={styles.buttonText}>Продолжить</Text>
       </TouchableOpacity>
