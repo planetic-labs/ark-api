@@ -1,0 +1,1077 @@
+<!-- Ковчег — макет v2. Светлая тема (базовая). 6 экранов: главный ×3 плотности + чат, Навигатор, Видео. -->
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --canvas:#E7E3DA;
+  --bg:#FFFFFF;
+  --bg-warm:#FCFAF5;
+  --ink:#221E17;
+  --ink-soft:#6E655A;
+  --ink-faint:#A69D8F;
+  --line:#ECE7DD;
+  --line-soft:#F4F1EA;
+  --amber:#B9770C;
+  --amber-bright:#E0951A;
+  --amber-wash:#FAF1DC;
+  --warrior-bg:#FCF4E3;
+  --font-display:'Spectral',serif;
+  --font-body:'IBM Plex Sans',sans-serif;
+  --font-mono:'IBM Plex Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{
+  background:var(--canvas);
+  font-family:var(--font-body);
+  color:var(--ink);
+  -webkit-font-smoothing:antialiased;
+  padding:40px 28px 80px;
+}
+.page-head{max-width:1300px;margin:0 auto 36px;}
+.page-head h1{font-family:var(--font-display);font-weight:600;font-size:30px;letter-spacing:-.01em;}
+.page-head p{font-family:var(--font-mono);font-size:12px;color:var(--ink-soft);margin-top:8px;letter-spacing:.02em;}
+
+.grid{
+  max-width:1300px;margin:0 auto;
+  display:flex;flex-wrap:wrap;gap:48px 40px;justify-content:center;
+}
+.cell{display:flex;flex-direction:column;align-items:center;gap:14px;}
+.cell-label{text-align:center;}
+.cell-label .lbl-name{font-family:var(--font-display);font-weight:600;font-size:17px;}
+.cell-label .lbl-sub{font-family:var(--font-mono);font-size:11px;color:var(--ink-soft);margin-top:3px;max-width:330px;line-height:1.5;}
+
+/* ===== телефон ===== */
+.phone{
+  width:390px;height:844px;
+  background:var(--bg);
+  border-radius:44px;
+  border:1px solid #D8D2C6;
+  box-shadow:0 28px 60px -18px rgba(40,33,20,.32),0 6px 16px -6px rgba(40,33,20,.18);
+  overflow:hidden;position:relative;
+  display:flex;flex-direction:column;
+}
+.statusbar{
+  height:50px;flex:0 0 50px;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 28px 0 32px;
+  font-family:var(--font-mono);font-size:13px;font-weight:500;color:var(--ink);
+}
+.statusbar .right{display:flex;gap:6px;align-items:center;}
+.sb-bars{width:18px;height:10px;background:var(--ink);border-radius:2px;}
+.sb-batt{width:24px;height:11px;border:1.4px solid var(--ink);border-radius:3px;position:relative;}
+.sb-batt::after{content:"";position:absolute;left:1.5px;top:1.5px;bottom:1.5px;width:14px;background:var(--ink);border-radius:1px;}
+
+.screen{flex:1;overflow-y:auto;overflow-x:hidden;position:relative;}
+.screen::-webkit-scrollbar{width:0;}
+
+/* ===== шапка экрана ===== */
+.apphead{
+  display:flex;align-items:center;gap:12px;
+  padding:8px 18px 14px;
+  position:sticky;top:0;background:var(--bg);z-index:20;
+}
+.apphead.warm{background:var(--bg-warm);}
+.avatar{
+  width:38px;height:38px;border-radius:50%;flex:0 0 38px;
+  background:#DCD5C7 center/cover;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-display);font-weight:600;font-size:15px;color:#7A715F;
+}
+.avatar.me{background:linear-gradient(140deg,#D0C6B0,#AFA690);color:#5F5848;}
+.avatar.warrior{box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--amber-bright);}
+.avatar.sm{width:30px;height:30px;flex-basis:30px;font-size:12px;}
+.avatar.lg{width:46px;height:46px;flex-basis:46px;font-size:17px;}
+.apphead .title-wrap{flex:1;min-width:0;}
+.apphead .app-title{font-family:var(--font-display);font-weight:600;font-size:20px;letter-spacing:-.01em;line-height:1.1;}
+.apphead .app-sub{font-family:var(--font-mono);font-size:10.5px;color:var(--ink-faint);margin-top:2px;}
+.head-actions{display:flex;gap:4px;}
+.icon-btn{
+  width:38px;height:38px;border-radius:11px;border:none;background:transparent;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-soft);
+  position:relative;
+}
+.icon-btn:hover{background:var(--line-soft);}
+.icon-btn .dot-badge{
+  position:absolute;top:6px;right:6px;min-width:15px;height:15px;padding:0 3px;
+  background:var(--amber-bright);border-radius:8px;
+  font-family:var(--font-mono);font-size:9px;font-weight:500;color:#fff;
+  display:flex;align-items:center;justify-content:center;border:1.5px solid var(--bg);
+}
+
+/* ===== вкладки списка ===== */
+.tabs{
+  display:flex;gap:4px;padding:2px 18px 12px;position:sticky;background:var(--bg);z-index:19;
+}
+.tabs.warm{background:var(--bg-warm);}
+.tab{
+  font-family:var(--font-body);font-size:13px;font-weight:500;
+  padding:7px 14px;border-radius:9px;cursor:pointer;color:var(--ink-faint);
+}
+.tab.active{background:var(--ink);color:#fff;}
+.tab.active.amber{background:var(--amber);}
+
+/* ===== плашки ===== */
+.banner{
+  margin:0 14px 12px;border-radius:16px;padding:14px 16px;
+  display:flex;align-items:center;gap:13px;
+}
+.banner-satsang{background:var(--ink);color:#fff;}
+.banner-satsang .b-eyebrow{font-family:var(--font-mono);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--amber-bright);}
+.banner-satsang .b-title{font-family:var(--font-display);font-weight:600;font-size:16px;margin-top:2px;}
+.banner .b-text{flex:1;min-width:0;}
+.b-join{
+  font-family:var(--font-body);font-size:13px;font-weight:600;
+  background:var(--amber-bright);color:#fff;border:none;
+  padding:9px 16px;border-radius:11px;cursor:pointer;white-space:nowrap;
+}
+.b-join.ghost{background:transparent;border:1.4px solid rgba(255,255,255,.3);color:#fff;}
+
+/* плавающие слои (воздушный) */
+.float-layer{
+  position:absolute;left:14px;right:14px;z-index:30;
+  border-radius:18px;padding:14px 16px;
+  display:flex;align-items:center;gap:12px;
+  box-shadow:0 14px 30px -10px rgba(40,33,20,.3);
+}
+.float-practice{top:74px;background:#fff;border:1px solid var(--line);}
+.float-practice .fp-pulse{width:9px;height:9px;border-radius:50%;background:var(--amber-bright);flex:0 0 9px;box-shadow:0 0 0 4px var(--amber-wash);}
+.float-zoom{top:158px;background:var(--ink);color:#fff;}
+.layer-close{
+  width:28px;height:28px;border-radius:8px;border:none;background:var(--line-soft);
+  color:var(--ink-soft);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;flex:0 0 28px;
+}
+.layer-lock{
+  width:28px;height:28px;flex:0 0 28px;display:flex;align-items:center;justify-content:center;
+  color:rgba(255,255,255,.5);
+}
+
+/* ===== сводка состояния (конденсированный) ===== */
+.summary{padding:0 14px 14px;display:flex;flex-direction:column;gap:8px;}
+.summary-row{display:flex;gap:8px;}
+.stat-chip{
+  flex:1;background:var(--bg-warm);border:1px solid var(--line);border-radius:13px;
+  padding:11px 12px;
+}
+.stat-chip .sc-num{font-family:var(--font-display);font-weight:700;font-size:22px;line-height:1;}
+.stat-chip .sc-num.amber{color:var(--amber);}
+.stat-chip .sc-label{font-family:var(--font-mono);font-size:9.5px;color:var(--ink-soft);margin-top:5px;line-height:1.35;letter-spacing:.01em;}
+.section-tag{
+  font-family:var(--font-mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--ink-faint);padding:4px 18px 8px;
+}
+
+/* ===== список чатов ===== */
+.chatlist{padding:0 8px 16px;}
+.chat-row{
+  display:flex;gap:12px;padding:11px 10px;border-radius:14px;cursor:pointer;align-items:flex-start;
+}
+.chat-row:hover{background:var(--line-soft);}
+.cr-body{flex:1;min-width:0;padding-top:1px;}
+.cr-top{display:flex;align-items:baseline;gap:8px;}
+.cr-name{font-family:var(--font-display);font-weight:600;font-size:15px;letter-spacing:-.005em;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.cr-time{font-family:var(--font-mono);font-size:10px;color:var(--ink-faint);flex:0 0 auto;}
+.cr-preview{
+  font-size:12.5px;color:var(--ink-soft);margin-top:3px;line-height:1.4;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.cr-preview .pv-author{color:var(--ink);font-weight:500;}
+.cr-preview .pv-author.warrior{color:var(--amber);}
+.cr-preview.unread{color:var(--ink);font-weight:500;}
+.cr-meta{display:flex;align-items:center;gap:6px;margin-top:6px;}
+.warrior-mark{font-size:11px;color:var(--amber-bright);}
+.count-badge{
+  min-width:20px;height:20px;padding:0 6px;border-radius:10px;
+  background:var(--ink);color:#fff;
+  font-family:var(--font-mono);font-size:10.5px;font-weight:500;
+  display:flex;align-items:center;justify-content:center;flex:0 0 auto;
+}
+.count-badge.amber{background:var(--amber);}
+.count-badge.hollow{background:transparent;color:var(--ink-faint);border:1.4px solid var(--line);}
+.cr-name.muted{color:var(--ink-soft);font-weight:500;}
+.practice-line{
+  display:flex;align-items:center;gap:7px;margin-top:7px;
+  background:var(--amber-wash);border-radius:8px;padding:5px 9px;
+}
+.practice-line .pl-dot{width:6px;height:6px;border-radius:50%;background:var(--amber-bright);flex:0 0 6px;}
+.practice-line .pl-text{font-family:var(--font-mono);font-size:10.5px;color:var(--amber);font-weight:500;letter-spacing:.01em;}
+
+.list-divider{height:1px;background:var(--line);margin:6px 18px;}
+
+/* ===== таб-бар ===== */
+.tabbar{
+  flex:0 0 84px;border-top:1px solid var(--line);
+  display:flex;align-items:flex-start;padding:9px 6px 0;background:var(--bg);
+}
+.tabbar.warm{background:var(--bg-warm);}
+.tab-item{
+  flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;
+  cursor:pointer;color:var(--ink-faint);position:relative;padding-top:3px;
+}
+.tab-item.active{color:var(--amber);}
+.tab-item .ti-label{font-family:var(--font-body);font-size:10px;font-weight:500;}
+.tab-item .ti-badge{
+  position:absolute;top:-2px;right:50%;margin-right:-22px;
+  min-width:16px;height:16px;padding:0 4px;background:var(--amber-bright);
+  border-radius:8px;color:#fff;font-family:var(--font-mono);font-size:9px;font-weight:500;
+  display:flex;align-items:center;justify-content:center;border:1.5px solid var(--bg);
+}
+.tabbar svg{display:block;}
+
+/* ===== содержимое чата ===== */
+.chat-head{
+  padding:8px 8px 12px;display:flex;align-items:center;gap:6px;
+  position:sticky;top:0;background:var(--bg);z-index:20;border-bottom:1px solid var(--line-soft);
+}
+.back-btn{width:36px;height:36px;border:none;background:transparent;cursor:pointer;color:var(--ink);display:flex;align-items:center;justify-content:center;}
+.chat-head .ch-info{flex:1;min-width:0;}
+.chat-head .ch-name{font-family:var(--font-display);font-weight:600;font-size:16px;line-height:1.1;}
+.chat-head .ch-sub{font-family:var(--font-mono);font-size:10px;color:var(--ink-faint);margin-top:2px;display:flex;align-items:center;gap:5px;}
+.ch-warrior-count{color:var(--amber);}
+
+.thread{padding:14px 14px 8px;display:flex;flex-direction:column;gap:14px;}
+.sys-msg{
+  align-self:center;font-family:var(--font-mono);font-size:10px;color:var(--ink-faint);
+  background:var(--line-soft);padding:5px 12px;border-radius:9px;letter-spacing:.01em;
+}
+.sys-msg.warn{color:var(--amber);background:var(--amber-wash);}
+
+.msg{display:flex;gap:9px;max-width:90%;}
+.msg-bubble{
+  background:var(--bg-warm);border:1px solid var(--line);
+  border-radius:4px 15px 15px 15px;padding:9px 12px;
+}
+.msg .m-author{font-family:var(--font-display);font-weight:600;font-size:13px;margin-bottom:3px;}
+.msg .m-text{font-size:13px;line-height:1.5;color:var(--ink);}
+.msg .m-meta{
+  font-family:var(--font-mono);font-size:9.5px;color:var(--ink-faint);
+  margin-top:5px;display:flex;align-items:center;gap:6px;
+}
+.read-check{color:var(--amber-bright);font-weight:500;}
+
+/* сообщение Воина */
+.msg.warrior .msg-bubble{background:var(--warrior-bg);border-color:#F0DFB8;}
+.msg.warrior .m-author{color:var(--amber);display:flex;align-items:center;gap:5px;}
+.msg.warrior .m-author::before{content:"\25C8";font-size:11px;}
+
+/* отчёт */
+.report-card{
+  border:1px solid var(--line);border-radius:15px;overflow:hidden;background:var(--bg);
+  max-width:100%;
+}
+.report-head{
+  background:var(--bg-warm);padding:10px 13px;border-bottom:1px solid var(--line);
+  display:flex;align-items:center;gap:8px;
+}
+.report-head .rh-tag{font-family:var(--font-mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint);}
+.report-head .rh-name{font-family:var(--font-display);font-weight:600;font-size:13px;}
+.report-head .rh-date{font-family:var(--font-mono);font-size:10px;color:var(--ink-faint);margin-left:auto;}
+.report-body{padding:11px 13px;display:flex;flex-direction:column;gap:8px;}
+.report-item{display:flex;gap:9px;}
+.report-item .ri-num{
+  font-family:var(--font-mono);font-size:11px;color:var(--amber);font-weight:500;
+  flex:0 0 16px;padding-top:1px;
+}
+.report-item .ri-text{font-size:12.5px;line-height:1.5;color:var(--ink);}
+.report-foot{
+  border-top:1px solid var(--line-soft);padding:9px 13px;
+  display:flex;flex-direction:column;gap:9px;
+}
+.studied-row{display:flex;align-items:center;gap:9px;}
+.btn-study{
+  font-family:var(--font-body);font-size:11.5px;font-weight:600;
+  border:1.4px solid var(--amber);color:var(--amber);background:transparent;
+  padding:6px 13px;border-radius:9px;cursor:pointer;
+}
+.btn-study.done{background:var(--amber);color:#fff;border-color:var(--amber);}
+.studied-stat{font-family:var(--font-mono);font-size:9.5px;color:var(--ink-faint);}
+.studied-stat .ss-warrior{color:var(--amber);}
+.react-row{display:flex;gap:6px;align-items:center;}
+.react-chip{
+  display:flex;align-items:center;gap:4px;
+  background:var(--line-soft);border-radius:11px;padding:3px 8px;
+  font-size:11px;color:var(--ink-soft);font-family:var(--font-mono);
+}
+.react-chip.mine{background:var(--amber-wash);color:var(--amber);}
+.react-add{
+  width:24px;height:22px;border-radius:11px;border:1px dashed var(--line);
+  color:var(--ink-faint);font-size:12px;display:flex;align-items:center;justify-content:center;cursor:pointer;
+}
+.react-divider{font-family:var(--font-mono);font-size:9px;color:var(--ink-faint);margin-left:2px;}
+
+/* корректировка-тред */
+.correction{
+  border-left:3px solid var(--amber-bright);
+  padding-left:13px;margin-left:3px;display:flex;flex-direction:column;gap:10px;
+}
+.correction-tag{
+  font-family:var(--font-mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--amber);display:flex;align-items:center;gap:5px;
+}
+.reply-msg{padding-left:14px;border-left:1px solid var(--line);margin-left:2px;}
+.reply-msg .rm-to{font-family:var(--font-mono);font-size:9px;color:var(--ink-faint);margin-bottom:4px;}
+
+.composer{
+  flex:0 0 auto;border-top:1px solid var(--line);padding:10px 12px;
+  display:flex;align-items:center;gap:9px;background:var(--bg);
+}
+.composer .comp-field{
+  flex:1;background:var(--bg-warm);border:1px solid var(--line);border-radius:14px;
+  padding:10px 14px;font-size:12.5px;color:var(--ink-faint);
+}
+.comp-icon{width:34px;height:34px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--ink-soft);background:var(--line-soft);}
+.comp-icon.send{background:var(--amber);color:#fff;}
+
+/* ===== навигатор ===== */
+.nav-stream{padding:6px 0 16px;}
+.nav-node{display:flex;gap:0;padding:0 16px;position:relative;}
+.nav-rail{flex:0 0 28px;display:flex;flex-direction:column;align-items:center;}
+.rail-line{width:2px;flex:1;background:var(--line);}
+.rail-line.done{background:var(--amber-bright);}
+.rail-line.faint{background:var(--line-soft);}
+.node-dot{
+  width:15px;height:15px;border-radius:50%;border:2.5px solid var(--line);
+  background:var(--bg);flex:0 0 15px;margin:4px 0;z-index:2;
+}
+.node-dot.done{background:var(--amber-bright);border-color:var(--amber-bright);}
+.node-dot.active{border-color:var(--amber-bright);box-shadow:0 0 0 4px var(--amber-wash);}
+.node-body{flex:1;padding:2px 0 22px 14px;min-width:0;}
+
+.node-done .node-title{color:var(--ink-soft);}
+.node-done .node-title::after{content:" \2713";color:var(--amber-bright);}
+.node-future{opacity:.5;}
+.node-title{font-family:var(--font-display);font-weight:600;font-size:15px;line-height:1.25;}
+.node-step{font-family:var(--font-mono);font-size:9.5px;color:var(--ink-faint);letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px;}
+
+.node-card{
+  margin-top:9px;border:1px solid var(--line);border-radius:14px;background:var(--bg);
+  overflow:hidden;
+}
+.node-card.active-card{border-color:#F0DFB8;box-shadow:0 8px 22px -12px rgba(185,119,12,.3);}
+.node-card-text{padding:11px 13px;font-size:12.5px;line-height:1.55;color:var(--ink-soft);}
+.node-materials{border-top:1px solid var(--line-soft);}
+.material-link{
+  display:flex;align-items:center;gap:10px;padding:9px 13px;cursor:pointer;
+  border-bottom:1px solid var(--line-soft);
+}
+.material-link:last-child{border-bottom:none;}
+.material-link:hover{background:var(--line-soft);}
+.ml-icon{
+  width:30px;height:30px;border-radius:9px;background:var(--bg-warm);border:1px solid var(--line);
+  display:flex;align-items:center;justify-content:center;flex:0 0 30px;color:var(--amber);
+}
+.ml-body{flex:1;min-width:0;}
+.ml-kind{font-family:var(--font-mono);font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);}
+.ml-title{font-size:12.5px;font-weight:500;color:var(--ink);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ml-state{flex:0 0 auto;}
+.ml-check{width:18px;height:18px;border-radius:50%;background:var(--amber-bright);color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;}
+.ml-circle{width:17px;height:17px;border-radius:50%;border:1.6px solid var(--line);}
+.merge-note{
+  font-family:var(--font-mono);font-size:9px;color:var(--ink-faint);
+  padding:8px 13px 2px;line-height:1.5;
+}
+
+/* ===== видео ===== */
+.video-screen{padding:4px 0 16px;}
+.continue-card{
+  margin:6px 16px 20px;border-radius:18px;overflow:hidden;border:1px solid var(--line);
+  background:var(--bg);box-shadow:0 10px 26px -14px rgba(40,33,20,.25);
+}
+.cc-thumb{
+  height:172px;background:
+    radial-gradient(circle at 30% 35%,rgba(224,149,26,.22),transparent 55%),
+    linear-gradient(155deg,#3A332A,#221E17);
+  position:relative;display:flex;align-items:center;justify-content:center;
+}
+.cc-play{
+  width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,.94);
+  display:flex;align-items:center;justify-content:center;
+}
+.cc-play::after{content:"";border-style:solid;border-width:9px 0 9px 15px;border-color:transparent transparent transparent var(--ink);margin-left:4px;}
+.cc-eyebrow{
+  position:absolute;top:13px;left:14px;font-family:var(--font-mono);font-size:9px;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--amber-bright);
+}
+.cc-progress{position:absolute;left:0;right:0;bottom:0;height:4px;background:rgba(255,255,255,.18);}
+.cc-progress::after{content:"";position:absolute;left:0;top:0;bottom:0;width:64%;background:var(--amber-bright);}
+.cc-info{padding:12px 15px;}
+.cc-title{font-family:var(--font-display);font-weight:600;font-size:16px;line-height:1.25;}
+.cc-meta{font-family:var(--font-mono);font-size:10px;color:var(--ink-faint);margin-top:5px;}
+
+.playlist-row{
+  display:flex;align-items:center;gap:13px;padding:11px 16px;cursor:pointer;
+}
+.playlist-row:hover{background:var(--line-soft);}
+.pl-cover{
+  width:52px;height:52px;border-radius:12px;flex:0 0 52px;
+  background:linear-gradient(150deg,#E8DFC9,#D4C9AE);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-display);font-weight:700;font-size:20px;color:#8A7E63;
+}
+.pl-cover.c2{background:linear-gradient(150deg,#E5D3B0,#D8BE8E);}
+.pl-cover.c3{background:linear-gradient(150deg,#DDD8CC,#C5BCA6);}
+.pl-cover.c4{background:linear-gradient(150deg,#EAD9B4,#DBC290);}
+.pl-info{flex:1;min-width:0;}
+.pl-name{font-family:var(--font-display);font-weight:600;font-size:15px;}
+.pl-bar{height:4px;background:var(--line);border-radius:3px;margin-top:7px;overflow:hidden;}
+.pl-bar > i{display:block;height:100%;background:var(--amber-bright);border-radius:3px;}
+.pl-count{font-family:var(--font-mono);font-size:9.5px;color:var(--ink-faint);margin-top:5px;}
+.pl-chevron{color:var(--ink-faint);flex:0 0 auto;}
+.video-section-tag{
+  font-family:var(--font-mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--ink-faint);padding:6px 16px 4px;
+}
+</style>
+
+<div class="page-head">
+  <h1>Ковчег — макет v2</h1>
+  <p>светлая тема (базовая) · главный экран в 3 вариантах плотности + чат, навигатор, видео · 390×844</p>
+</div>
+
+<div class="grid">
+
+  <!-- ============ 1. ГЛАВНЫЙ — КОНДЕНСИРОВАННЫЙ ============ -->
+  <div class="cell">
+    <div class="cell-label">
+      <div class="lbl-name">Главный · Конденсированный</div>
+      <div class="lbl-sub">состояние Работы агрегируется на главном — сводка сверху, превью в каждой строке</div>
+    </div>
+    <div class="phone">
+      <div class="statusbar"><span>9:41</span><span class="right"><span class="sb-bars"></span><span class="sb-batt"></span></span></div>
+      <div class="screen">
+        <div class="apphead">
+          <div class="avatar me">АП</div>
+          <div class="title-wrap">
+            <div class="app-title">Ковчег</div>
+            <div class="app-sub">Алексей Прусиков · Администратор</div>
+          </div>
+          <div class="head-actions">
+            <button class="icon-btn"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="6.5" stroke="currentColor" stroke-width="1.6"/><path d="M14 14l4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
+            <button class="icon-btn"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2.5c-2.8 0-4.5 2-4.5 4.8 0 4-1.7 5-1.7 5h12.4s-1.7-1-1.7-5c0-2.8-1.7-4.8-4.5-4.8z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M8.3 16a1.8 1.8 0 003.4 0" stroke="currentColor" stroke-width="1.5"/></svg><span class="dot-badge">7</span></button>
+          </div>
+        </div>
+
+        <!-- сводка состояния -->
+        <div class="summary">
+          <div class="summary-row">
+            <div class="stat-chip"><div class="sc-num amber">3</div><div class="sc-label">неизученных<br>отчёта</div></div>
+            <div class="stat-chip"><div class="sc-num amber">5</div><div class="sc-label">новых<br>корректировок</div></div>
+            <div class="stat-chip"><div class="sc-num">2</div><div class="sc-label">материала<br>в Навигаторе</div></div>
+          </div>
+        </div>
+
+        <!-- плашка сатсанга -->
+        <div class="banner banner-satsang">
+          <div class="b-text">
+            <div class="b-eyebrow">Сатсанг назначен</div>
+            <div class="b-title">Сегодня в 20:00</div>
+          </div>
+          <button class="b-join ghost">Напомнить</button>
+        </div>
+
+        <div class="tabs">
+          <div class="tab active">Основные</div>
+          <div class="tab">Все</div>
+        </div>
+
+        <div class="chatlist">
+          <div class="chat-row">
+            <div class="avatar warrior">И</div>
+            <div class="cr-body">
+              <div class="cr-top"><span class="cr-name">Инкубатор</span><span class="cr-time">11:20</span></div>
+              <div class="cr-preview unread"><span class="pv-author">Мария Л.:</span> Отчёт — 4 пункта, прошу корректировку</div>
+              <div class="cr-meta"><span class="warrior-mark">◈</span><span class="count-badge">2</span></div>
+            </div>
+          </div>
+          <div class="chat-row">
+            <div class="avatar warrior">Р</div>
+            <div class="cr-body">
+              <div class="cr-top"><span class="cr-name">Реанимация.Интенсив</span><span class="cr-time">10:48</span></div>
+              <div class="cr-preview unread"><span class="pv-author warrior">◈ Галя Мурзина:</span> Корректировка по пункту 2 отчёта…</div>
+              <div class="cr-meta"><span class="warrior-mark">◈</span><span class="count-badge amber">5</span></div>
+            </div>
+          </div>
+          <div class="chat-row">
+            <div class="avatar">М</div>
+            <div class="cr-body">
+              <div class="cr-top"><span class="cr-name">Текущие материалы Работы+</span><span class="cr-time">09:30</span></div>
+              <div class="cr-preview unread">Новая нарезка · «Внимание как опора»</div>
+              <div class="cr-meta"><span class="count-badge">1</span></div>
+            </div>
+          </div>
+          <div class="chat-row">
+            <div class="avatar">Т</div>
+            <div class="cr-body">
+              <div class="cr-top"><span class="cr-name muted">Технический</span><span class="cr-time">08:15</span></div>
+              <div class="cr-preview">Расписание практик · ссылки Zoom — в закрепе</div>
+              <div class="practice-line"><span class="pl-dot"></span><span class="pl-text">идёт Гудение до 15:40</span></div>
+            </div>
+          </div>
+          <div class="chat-row">
+            <div class="avatar">С</div>
+            <div class="cr-body">
+              <div class="cr-top"><span class="cr-name muted">Общение внутриКовчега</span><span class="cr-time">вчера</span></div>
+              <div class="cr-preview">Сергей Д.: Благодарю за сегодняшний Сатсанг 🙏</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="tabbar">
+        <div class="tab-item active">
+          <svg width="23" height="23" viewBox="0 0 23 23" fill="none"><path d="M4 6.5C4 5.1 5.1 4 6.5 4h10C17.9 4 19 5.1 19 6.5v7c0 1.4-1.1 2.5-2.5 2.5H9l-4 3.5v-3.5H6.5C5.1 16 4 14.9 4 13.5v-7z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
+          <span class="ti-label">Чаты</span>
+        </div>
+        <div class="tab-item">
+          <svg width="23" height="23" viewBox="0 0 23 23" fill="none"><circle cx="6" cy="6" r="2.2" stroke="currentColor" stroke-width="1.7"/><circle cx="17" cy="11.5" r="2.2" stroke="currentColor" stroke-width="1.7"/><circle cx="7.5" cy="17.5" r="2.2" stroke="currentColor" stroke-width="1.7"/><path d="M7.7 7.5l7.6 2.8M15.4 13.4l-6.3 3" stroke="currentColor" stroke-width="1.5"/></svg>
+          <span class="ti-label">Навигатор</span>
+        </div>
+        <div class="tab-item">
+          <svg width="23" height="23" viewBox="0 0 23 23" fill="none"><rect x="3.5" y="5" width="16" height="13" rx="2.6" stroke="currentColor" stroke-width="1.7"/><path d="M10 9.3l4 2.2-4 2.2V9.3z" fill="currentColor"/></svg>
+          <span class="ti-label">Видео</span>
+        </div>
+        <div class="tab-item">
+          <svg width="23" height="23" viewBox="0 0 23 23" fill="none"><path d="M11.5 3.5l7.5 4-7.5 4-7.5-4 7.5-4z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M4.5 11.5l7 3.7 7-3.7M4.5 15l7 3.7 7-3.7" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+          <span class="ti-label">Материалы</span>
+        </div>
+        <div class="tab-item">
+          <svg width="23" height="23" viewBox="0 0 23 23" fill="none"><path d="M6 4h8l4 4v11H6V4z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M8.5 9.5h6M8.5 12.5h6M8.5 15.5h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          <span class="ti-label">Летописи</span>
+          <span class="ti-badge">9</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 2. ГЛАВНЫЙ — ЛЁГКИЙ ============ -->
+  <div class="cell">
+    <div class="cell-label">
+      <div class="lbl-name">Главный · Лёгкий</div>
+      <div class="lbl-sub">главный только навигирует — чистый список, критичное проявляется весом строки</div>
+    </div>
+    <div class="phone">
+      <div class="statusbar"><span>9:41</span><span class="right"><span class="sb-bars"></span><span class="sb-batt"></span></span></div>
+      <div class="screen">
+        <div class="apphead">
+          <div class="avatar me">АП</div>
+          <div class="title-wrap">
+            <div class="app-title">Ковчег</div>
+          </div>
+          <div class="head-actions">
+            <button class="icon-btn"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="6.5" stroke="currentColor" stroke-width="1.6"/><path d="M14 14l4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
+            <button class="icon-btn"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2.5c-2.8 0-4.5 2-4.5 4.8 0 4-1.7 5-1.7 5h12.4s-1.7-1-1.7-5c0-2.8-1.7-4.8-4.5-4.8z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M8.3 16a1.8 1.8 0 003.4 0" stroke="currentColor" stroke-width="1.5"/></svg><span class="dot-badge">7</span></button>
+          </div>
+        </div>
+
+        <!-- плашка сатсанга — единственное «сверх списка» -->
+        <div class="banner banner-satsang">
+          <div class="b-text">
+            <div class="b-eyebrow">Сатсанг назначен</div>
+            <div class="b-title">Сегодня в 20:00</div>
+          </div>
+          <button class="b-join ghost">Напомнить</button>
+        </div>
+
+        <div class="tabs">
+          <div class="tab active">Основные</div>
+          <div class="tab">Все</div>
+        </div>
+
+        <div class="chatlist">
+          <div class="chat-row">
+            <div class="avatar warrior">И</div>
+            <div class="cr-body">
+              <div class="cr-top"><span class="cr-name">Инкубатор</span><span class="cr-time">11:20</span></div>
+              <div class="cr-preview unread">Мария Л.: Отчёт — 4 пункта, прошу корректировку</div>
+            </div>
+            <span class="count-badge" style="margin-top:14px">2</span>
+          </div>
+          <div class="chat-row">
+            <div class="avatar warrior">Р</div>
+            <div class="cr-body">
+              <div class="cr-top"><span class="cr-name">Реанимация.Интенсив</span><span class="cr-time">10:48</span></div>
+              <div class="cr-preview unread"><span class="pv-author warrior">◈ Галя Мурзина:</span> Корректировка по пункту 2…</div>
+            </div>
+            <span class="count-badge amber" style="margin-top:14px">5</span>
+          </div>
+          <div class="chat-row">
+            <div class="avatar">М</div>
+            <div class="cr-body">
+              <div class="cr-top"><span class="cr-name">Текущие материалы Работы+</span><span class="cr-time">09:30</span></div>
+              <div class="cr-preview unread">Новая нарезка · «Внимание как опора»</div>
+            </div>
+            <span class="count-badge" style="margin-top:14px">1</span>
+          </div>
+          <div class="chat-row">
+            <div class="avatar">Т</div>
+            <div class="cr-body">
+              <div class="cr-top"><span class="cr-name muted">Технический</span><span class="cr-time">08:15</span></div>
+              <div class="practice-line"><span class="pl-dot"></span><span class="pl-text">идёт Гудение до 15:40</span></div>
+            </div>
+          </div>
+          <div class="chat-row">
+            <div class="avatar">С</div>
+            <div class="cr-body">
+              <div class="cr-top"><span class="cr-name muted">Общение внутриКовчега</span><span class="cr-time">вчера</span></div>
+              <div class="cr-preview">Сергей Д.: Благодарю за сегодняшний Сатсанг 🙏</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="tabbar">
+        <div class="tab-item active">
+          <svg width="23" height="23" viewBox="0 0 23 23" fill="none"><path d="M4 6.5C4 5.1 5.1 4 6.5 4h10C17.9 4 19 5.1 19 6.5v7c0 1.4-1.1 2.5-2.5 2.5H9l-4 3.5v-3.5H6.5C5.1 16 4 14.9 4 13.5v-7z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
+          <span class="ti-label">Чаты</span>
+        </div>
+        <div class="tab-item">
+          <svg width="23" height="23" viewBox="0 0 23 23" fill="none"><circle cx="6" cy="6" r="2.2" stroke="currentColor" stroke-width="1.7"/><circle cx="17" cy="11.5" r="2.2" stroke="currentColor" stroke-width="1.7"/><circle cx="7.5" cy="17.5" r="2.2" stroke="currentColor" stroke-width="1.7"/><path d="M7.7 7.5l7.6 2.8M15.4 13.4l-6.3 3" stroke="currentColor" stroke-width="1.5"/></svg>
+          <span class="ti-label">Навигатор</span>
+        </div>
+        <div class="tab-item">
+          <svg width="23" height="23" viewBox="0 0 23 23" fill="none"><rect x="3.5" y="5" width="16" height="13" rx="2.6" stroke="currentColor" stroke-width="1.7"/><path d="M10 9.3l4 2.2-4 2.2V9.3z" fill="currentColor"/></svg>
+          <span class="ti-label">Видео</span>
+        </div>
+        <div class="tab-item">
+          <svg width="23" height="23" viewBox="0 0 23 23" fill="none"><path d="M11.5 3.5l7.5 4-7.5 4-7.5-4 7.5-4z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M4.5 11.5l7 3.7 7-3.7M4.5 15l7 3.7 7-3.7" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+          <span class="ti-label">Материалы</span>
+        </div>
+        <div class="tab-item">
+          <svg width="23" height="23" viewBox="0 0 23 23" fill="none"><path d="M6 4h8l4 4v11H6V4z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M8.5 9.5h6M8.5 12.5h6M8.5 15.5h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          <span class="ti-label">Летописи</span>
+          <span class="ti-badge">9</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 3. ГЛАВНЫЙ — ВОЗДУШНЫЙ ============ -->
+  <div class="cell">
+    <div class="cell-label">
+      <div class="lbl-name">Главный · Воздушный</div>
+      <div class="lbl-sub">белый фон, янтарь в акцентах; события — плавающие слои с разными правами на закрытие (✕ / 🔒)</div>
+    </div>
+    <div class="phone">
+      <div class="statusbar"><span>9:41</span><span class="right"><span class="sb-bars"></span><span class="sb-batt"></span></span></div>
+      <div class="screen">
+        <div class="apphead warm">
+          <div class="avatar me">АП</div>
+          <div class="title-wrap">
+            <div class="app-title">Ковчег</div>
+          </div>
+          <div class="head-actions">
+            <button class="icon-btn"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="6.5" stroke="currentColor" stroke-width="1.6"/><path d="M14 14l4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
+            <button class="icon-btn"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2.5c-2.8 0-4.5 2-4.5 4.8 0 4-1.7 5-1.7 5h12.4s-1.7-1-1.7-5c0-2.8-1.7-4.8-4.5-4.8z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M8.3 16a1.8 1.8 0 003.4 0" stroke="currentColor" stroke-width="1.5"/></svg><span class="dot-badge">7</span></button>
+          </div>
+        </div>
+
+        <!-- плавающий слой: практика — можно закрыть -->
+        <div class="float-layer float-practice">
+          <span class="fp-pulse"></span>
+          <div class="b-text">
+            <div style="font-family:var(--font-mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint)">Практика идёт</div>
+            <div style="font-family:var(--font-display);font-weight:600;font-size:14px;margin-top:1px">Гудение · до 15:40</div>
+          </div>
+          <button class="layer-close">✕</button>
+        </div>
+
+        <!-- плавающий слой: зум Воинов — только Войти, закрыть нельзя -->
+        <div class="float-layer float-zoom">
+          <span class="layer-lock"><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="2.5" y="6.5" width="10" height="7" rx="1.6" stroke="currentColor" stroke-width="1.5"/><path d="M4.8 6.5V4.8a2.7 2.7 0 015.4 0v1.7" stroke="currentColor" stroke-width="1.5"/></svg></span>
+          <div class="b-text">
+            <div style="font-family:var(--font-mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--amber-bright)">Сатсанг назначен</div>
+            <div style="font-family:var(--font-display);font-weight:600;font-size:15px;margin-top:1px;color:#fff">Сегодня в 20:00</div>
+          </div>
+          <button class="b-join">Войти</button>
+        </div>
+
+        <div class="tabs warm" style="padding-top:150px">
+          <div class="tab active amber">Основные</div>
+          <div class="tab">Все</div>
+        </div>
+
+        <div class="chatlist">
+          <div class="chat-row">
+            <div class="avatar warrior">И</div>
+            <div class="cr-body">
+              <div class="cr-top"><span class="cr-name">Инкубатор</span><span class="cr-time">11:20</span></div>
+              <div class="cr-preview unread">Мария Л.: Отчёт — 4 пункта…</div>
+            </div>
+            <span class="count-badge amber" style="margin-top:14px">2</span>
+          </div>
+          <div class="list-divider"></div>
+          <div class="chat-row">
+            <div class="avatar warrior">Р</div>
+            <div class="cr-body">
+              <div class="cr-top"><span class="cr-name">Реанимация.Интенсив</span><span class="cr-time">10:48</span></div>
+              <div class="cr-preview unread"><span class="pv-author warrior">◈ Галя Мурзина</span> · корректировка</div>
+            </div>
+            <span class="count-badge amber" style="margin-top:14px">5</span>
+          </div>
+          <div class="list-divider"></div>
+          <div class="chat-row">
+            <div class="avatar">М</div>
+            <div class="cr-body">
+              <div class="cr-top"><span class="cr-name">Текущие материалы Работы+</span><span class="cr-time">09:30</span></div>
+              <div class="cr-preview">Новая нарезка · «Внимание как опора»</div>
+            </div>
+            <span class="count-badge hollow" style="margin-top:14px">1</span>
+          </div>
+          <div class="list-divider"></div>
+          <div class="chat-row">
+            <div class="avatar">Т</div>
+            <div class="cr-body">
+              <div class="cr-top"><span class="cr-name muted">Технический</span><span class="cr-time">08:15</span></div>
+              <div class="cr-preview">Расписание практик — в закрепе</div>
+            </div>
+          </div>
+          <div class="list-divider"></div>
+          <div class="chat-row">
+            <div class="avatar">С</div>
+            <div class="cr-body">
+              <div class="cr-top"><span class="cr-name muted">Общение внутриКовчега</span><span class="cr-time">вчера</span></div>
+              <div class="cr-preview">Сергей Д.: Благодарю за Сатсанг 🙏</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="tabbar warm">
+        <div class="tab-item active">
+          <svg width="23" height="23" viewBox="0 0 23 23" fill="none"><path d="M4 6.5C4 5.1 5.1 4 6.5 4h10C17.9 4 19 5.1 19 6.5v7c0 1.4-1.1 2.5-2.5 2.5H9l-4 3.5v-3.5H6.5C5.1 16 4 14.9 4 13.5v-7z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
+          <span class="ti-label">Чаты</span>
+        </div>
+        <div class="tab-item">
+          <svg width="23" height="23" viewBox="0 0 23 23" fill="none"><circle cx="6" cy="6" r="2.2" stroke="currentColor" stroke-width="1.7"/><circle cx="17" cy="11.5" r="2.2" stroke="currentColor" stroke-width="1.7"/><circle cx="7.5" cy="17.5" r="2.2" stroke="currentColor" stroke-width="1.7"/><path d="M7.7 7.5l7.6 2.8M15.4 13.4l-6.3 3" stroke="currentColor" stroke-width="1.5"/></svg>
+          <span class="ti-label">Навигатор</span>
+        </div>
+        <div class="tab-item">
+          <svg width="23" height="23" viewBox="0 0 23 23" fill="none"><rect x="3.5" y="5" width="16" height="13" rx="2.6" stroke="currentColor" stroke-width="1.7"/><path d="M10 9.3l4 2.2-4 2.2V9.3z" fill="currentColor"/></svg>
+          <span class="ti-label">Видео</span>
+        </div>
+        <div class="tab-item">
+          <svg width="23" height="23" viewBox="0 0 23 23" fill="none"><path d="M11.5 3.5l7.5 4-7.5 4-7.5-4 7.5-4z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M4.5 11.5l7 3.7 7-3.7M4.5 15l7 3.7 7-3.7" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+          <span class="ti-label">Материалы</span>
+        </div>
+        <div class="tab-item">
+          <svg width="23" height="23" viewBox="0 0 23 23" fill="none"><path d="M6 4h8l4 4v11H6V4z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M8.5 9.5h6M8.5 12.5h6M8.5 15.5h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          <span class="ti-label">Летописи</span>
+          <span class="ti-badge">9</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 4. ЧАТ РЕАНИМАЦИИ ============ -->
+  <div class="cell">
+    <div class="cell-label">
+      <div class="lbl-name">Чат · Реанимация.Интенсив</div>
+      <div class="lbl-sub">отчёт-карточка, «изучен» отдельно от реакций, корректировка-тред, сообщение Воина выделено</div>
+    </div>
+    <div class="phone">
+      <div class="statusbar"><span>9:41</span><span class="right"><span class="sb-bars"></span><span class="sb-batt"></span></span></div>
+      <div class="screen">
+        <div class="chat-head">
+          <button class="back-btn"><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M13.5 5l-6 6 6 6" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          <div class="ch-info">
+            <div class="ch-name">Реанимация.Интенсив</div>
+            <div class="ch-sub"><span>32 участника</span>·<span class="ch-warrior-count">◈ 3 Воина</span></div>
+          </div>
+          <button class="icon-btn"><svg width="19" height="19" viewBox="0 0 19 19" fill="none"><path d="M3 5h13M5.5 9.5h8M8 14h3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></button>
+          <button class="icon-btn"><svg width="19" height="19" viewBox="0 0 19 19" fill="none"><circle cx="9.5" cy="4" r="1.5" fill="currentColor"/><circle cx="9.5" cy="9.5" r="1.5" fill="currentColor"/><circle cx="9.5" cy="15" r="1.5" fill="currentColor"/></svg></button>
+        </div>
+
+        <div class="thread">
+          <div class="sys-msg">Среда, 14 мая</div>
+
+          <!-- отчёт -->
+          <div class="msg" style="max-width:100%">
+            <div class="avatar sm">Е</div>
+            <div class="report-card">
+              <div class="report-head">
+                <div>
+                  <div class="rh-tag">Отчёт</div>
+                  <div class="rh-name">Елена Сорокина</div>
+                </div>
+                <div class="rh-date">14.05 · 09:12</div>
+              </div>
+              <div class="report-body">
+                <div class="report-item"><span class="ri-num">1.</span><span class="ri-text">Замечаю, что внимание держится дольше в тишине, но рассеивается при разговоре.</span></div>
+                <div class="report-item"><span class="ri-num">2.</span><span class="ri-text">Практику Гудения делаю утром. Появляется ровность, но к вечеру теряю её.</span></div>
+                <div class="report-item"><span class="ri-num">3.</span><span class="ri-text">Вопрос: правильно ли я понимаю, что усилие здесь — это не напряжение?</span></div>
+              </div>
+              <div class="report-foot">
+                <div class="studied-row">
+                  <button class="btn-study done">✓ Изучен</button>
+                  <span class="studied-stat">изучили 18 · <span class="ss-warrior">◈ 2</span></span>
+                </div>
+                <div class="react-row">
+                  <span class="react-divider">реакции</span>
+                  <span class="react-chip mine">🙏 4</span>
+                  <span class="react-chip">👁 2</span>
+                  <span class="react-add">+</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- корректировка-тред -->
+          <div class="correction">
+            <div class="correction-tag">◈ Корректировка · тред летописи</div>
+            <div class="msg warrior" style="max-width:100%">
+              <div class="avatar sm warrior">Г</div>
+              <div class="msg-bubble">
+                <div class="m-author">Галя Мурзина</div>
+                <div class="m-text">По пункту 3. Усилие — это не напряжение тела, а возвращение внимания. Напряжение, наоборот, признак того, что ты пытаешься «сделать» вместо того, чтобы быть. Перечитай Указатель об опоре и ответь своим Пониманием.</div>
+                <div class="m-meta"><span>09:48</span><span class="read-check">✓ прочитано 24</span></div>
+              </div>
+            </div>
+            <div class="reply-msg">
+              <div class="rm-to">↳ в ответ Гале Мурзиной</div>
+              <div class="msg" style="max-width:100%">
+                <div class="avatar sm">Е</div>
+                <div class="msg-bubble">
+                  <div class="m-author">Елена Сорокина</div>
+                  <div class="m-text">Понимание: усилие — это сам момент замечания, что я ушла. Не «держать», а увидеть и вернуться. Напряжение появлялось, потому что я пыталась удержать состояние. Реализую.</div>
+                  <div class="m-meta"><span>10:30</span><span class="read-check">✓✓</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="sys-msg warn">⚠ Дмитрий К. сделал скриншот</div>
+
+          <!-- обычное сообщение -->
+          <div class="msg">
+            <div class="avatar sm">А</div>
+            <div class="msg-bubble">
+              <div class="m-author">Антон Рыбин</div>
+              <div class="m-text">Спасибо, эта корректировка попала и в меня тоже.</div>
+              <div class="m-meta"><span>10:42</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="composer">
+        <button class="comp-icon"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 4v10M4 9h10" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></button>
+        <div class="comp-field">Сообщение или отчёт…</div>
+        <button class="comp-icon"><svg width="17" height="17" viewBox="0 0 17 17" fill="none"><rect x="6" y="2" width="5" height="9" rx="2.5" stroke="currentColor" stroke-width="1.6"/><path d="M3.5 8a5 5 0 0010 0M8.5 13v2.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 5. НАВИГАТОР ============ -->
+  <div class="cell">
+    <div class="cell-label">
+      <div class="lbl-name">Навигатор</div>
+      <div class="lbl-sub">3 уровня яркости: пройдено / активно / будущее · узел архива сводит 3 сущности в один шаг</div>
+    </div>
+    <div class="phone">
+      <div class="statusbar"><span>9:41</span><span class="right"><span class="sb-bars"></span><span class="sb-batt"></span></span></div>
+      <div class="screen">
+        <div class="apphead">
+          <div class="title-wrap" style="margin-left:4px">
+            <div class="app-title">Навигатор</div>
+            <div class="app-sub">v6 · обновляется без перевыпуска</div>
+          </div>
+          <div class="head-actions">
+            <button class="icon-btn"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="6.5" stroke="currentColor" stroke-width="1.6"/><path d="M14 14l4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
+          </div>
+        </div>
+
+        <div class="nav-stream">
+          <!-- пройдено -->
+          <div class="nav-node node-done">
+            <div class="nav-rail"><div class="node-dot done"></div><div class="rail-line done"></div></div>
+            <div class="node-body">
+              <div class="node-step">Шаг 1</div>
+              <div class="node-title">Вход в Работу</div>
+            </div>
+          </div>
+          <div class="nav-node node-done">
+            <div class="nav-rail"><div class="rail-line done"></div><div class="node-dot done"></div><div class="rail-line done"></div></div>
+            <div class="node-body">
+              <div class="node-step">Шаг 2</div>
+              <div class="node-title">Плейлист «Начало»</div>
+            </div>
+          </div>
+
+          <!-- активно -->
+          <div class="nav-node">
+            <div class="nav-rail"><div class="rail-line done"></div><div class="node-dot active"></div><div class="rail-line faint"></div></div>
+            <div class="node-body">
+              <div class="node-step" style="color:var(--amber)">Шаг 3 · здесь сейчас</div>
+              <div class="node-title">Архив рабочей группы · чаты 1–12</div>
+              <div class="node-card active-card">
+                <div class="node-card-text">Ранний архив. Аудиозаписи, скриншоты для изучения и записи Сатсангов идут одной последовательностью — порядок задаёт этот узел.</div>
+                <div class="merge-note">3 сущности архива сведены в один шаг:</div>
+                <div class="node-materials">
+                  <div class="material-link">
+                    <div class="ml-icon"><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M3 9V6c0-2.5 2-4.5 4.5-4.5S12 3.5 12 6v3" stroke="currentColor" stroke-width="1.5"/><rect x="2" y="8.5" width="3" height="5" rx="1.4" stroke="currentColor" stroke-width="1.5"/><rect x="10" y="8.5" width="3" height="5" rx="1.4" stroke="currentColor" stroke-width="1.5"/></svg></div>
+                    <div class="ml-body"><div class="ml-kind">Аудио</div><div class="ml-title">Чат 8 · аудио-плейлист</div></div>
+                    <div class="ml-state"><div class="ml-check">✓</div></div>
+                  </div>
+                  <div class="material-link">
+                    <div class="ml-icon"><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="2" y="2.5" width="11" height="10" rx="1.6" stroke="currentColor" stroke-width="1.5"/><path d="M2 10l3-3 2.5 2.5L10 6l3 3" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></div>
+                    <div class="ml-body"><div class="ml-kind">Скриншоты</div><div class="ml-title">Чат 8 · тексты для изучения</div></div>
+                    <div class="ml-state"><div class="ml-check">✓</div></div>
+                  </div>
+                  <div class="material-link">
+                    <div class="ml-icon"><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="2" y="3" width="11" height="9" rx="1.6" stroke="currentColor" stroke-width="1.5"/><path d="M6.5 6l3 1.5-3 1.5V6z" fill="currentColor"/></svg></div>
+                    <div class="ml-body"><div class="ml-kind">Запись Сатсанга</div><div class="ml-title">19.07 · вставлен между аудио</div></div>
+                    <div class="ml-state"><div class="ml-circle"></div></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- будущее -->
+          <div class="nav-node node-future">
+            <div class="nav-rail"><div class="rail-line faint"></div><div class="node-dot"></div><div class="rail-line faint"></div></div>
+            <div class="node-body">
+              <div class="node-step">Шаг 4</div>
+              <div class="node-title">Архивные материалы Работы</div>
+            </div>
+          </div>
+          <div class="nav-node node-future">
+            <div class="nav-rail"><div class="rail-line faint"></div><div class="node-dot"></div></div>
+            <div class="node-body">
+              <div class="node-step">Шаг 5</div>
+              <div class="node-title">Постоянная практика внимания</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="tabbar">
+        <div class="tab-item">
+          <svg width="23" height="23" viewBox="0 0 23 23" fill="none"><path d="M4 6.5C4 5.1 5.1 4 6.5 4h10C17.9 4 19 5.1 19 6.5v7c0 1.4-1.1 2.5-2.5 2.5H9l-4 3.5v-3.5H6.5C5.1 16 4 14.9 4 13.5v-7z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
+          <span class="ti-label">Чаты</span>
+        </div>
+        <div class="tab-item active">
+          <svg width="23" height="23" viewBox="0 0 23 23" fill="none"><circle cx="6" cy="6" r="2.2" stroke="currentColor" stroke-width="1.7"/><circle cx="17" cy="11.5" r="2.2" stroke="currentColor" stroke-width="1.7"/><circle cx="7.5" cy="17.5" r="2.2" stroke="currentColor" stroke-width="1.7"/><path d="M7.7 7.5l7.6 2.8M15.4 13.4l-6.3 3" stroke="currentColor" stroke-width="1.5"/></svg>
+          <span class="ti-label">Навигатор</span>
+        </div>
+        <div class="tab-item">
+          <svg width="23" height="23" viewBox="0 0 23 23" fill="none"><rect x="3.5" y="5" width="16" height="13" rx="2.6" stroke="currentColor" stroke-width="1.7"/><path d="M10 9.3l4 2.2-4 2.2V9.3z" fill="currentColor"/></svg>
+          <span class="ti-label">Видео</span>
+        </div>
+        <div class="tab-item">
+          <svg width="23" height="23" viewBox="0 0 23 23" fill="none"><path d="M11.5 3.5l7.5 4-7.5 4-7.5-4 7.5-4z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M4.5 11.5l7 3.7 7-3.7M4.5 15l7 3.7 7-3.7" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+          <span class="ti-label">Материалы</span>
+        </div>
+        <div class="tab-item">
+          <svg width="23" height="23" viewBox="0 0 23 23" fill="none"><path d="M6 4h8l4 4v11H6V4z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M8.5 9.5h6M8.5 12.5h6M8.5 15.5h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          <span class="ti-label">Летописи</span>
+          <span class="ti-badge">9</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 6. ВИДЕО ============ -->
+  <div class="cell">
+    <div class="cell-label">
+      <div class="lbl-name">Видео</div>
+      <div class="lbl-sub">отдельный таб (самый частый) · карточка «Продолжить» + плейлисты с прогрессом</div>
+    </div>
+    <div class="phone">
+      <div class="statusbar"><span>9:41</span><span class="right"><span class="sb-bars"></span><span class="sb-batt"></span></span></div>
+      <div class="screen">
+        <div class="apphead">
+          <div class="title-wrap" style="margin-left:4px">
+            <div class="app-title">Видео</div>
+          </div>
+          <div class="head-actions">
+            <button class="icon-btn"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="6.5" stroke="currentColor" stroke-width="1.6"/><path d="M14 14l4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
+          </div>
+        </div>
+
+        <div class="video-screen">
+          <div class="video-section-tag">Продолжить</div>
+          <div class="continue-card">
+            <div class="cc-thumb">
+              <div class="cc-eyebrow">Остановились здесь</div>
+              <div class="cc-play"></div>
+              <div class="cc-progress"></div>
+            </div>
+            <div class="cc-info">
+              <div class="cc-title">Сатсанг 13.08 · часть 2</div>
+              <div class="cc-meta">осталось 24:30 · плейлист «Внимать»</div>
+            </div>
+          </div>
+
+          <div class="video-section-tag">Плейлисты</div>
+          <div class="playlist-row">
+            <div class="pl-cover">Н</div>
+            <div class="pl-info">
+              <div class="pl-name">Начало</div>
+              <div class="pl-bar"><i style="width:100%"></i></div>
+              <div class="pl-count">12 / 12 изучено</div>
+            </div>
+            <span class="pl-chevron"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 3.5l5 4.5-5 4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          </div>
+          <div class="playlist-row">
+            <div class="pl-cover c2">Д</div>
+            <div class="pl-info">
+              <div class="pl-name">Дисциплина</div>
+              <div class="pl-bar"><i style="width:55%"></i></div>
+              <div class="pl-count">6 / 11 изучено</div>
+            </div>
+            <span class="pl-chevron"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 3.5l5 4.5-5 4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          </div>
+          <div class="playlist-row">
+            <div class="pl-cover c3">В</div>
+            <div class="pl-info">
+              <div class="pl-name">Внимать</div>
+              <div class="pl-bar"><i style="width:30%"></i></div>
+              <div class="pl-count">4 / 13 изучено</div>
+            </div>
+            <span class="pl-chevron"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 3.5l5 4.5-5 4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          </div>
+          <div class="playlist-row">
+            <div class="pl-cover c4">П</div>
+            <div class="pl-info">
+              <div class="pl-name">Практики</div>
+              <div class="pl-bar"><i style="width:0%"></i></div>
+              <div class="pl-count">0 / 9 изучено · точечный возврат</div>
+            </div>
+            <span class="pl-chevron"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 3.5l5 4.5-5 4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          </div>
+          <div class="playlist-row">
+            <div class="pl-cover">К</div>
+            <div class="pl-info">
+              <div class="pl-name">Ключи</div>
+              <div class="pl-bar"><i style="width:18%"></i></div>
+              <div class="pl-count">2 / 11 изучено</div>
+            </div>
+            <span class="pl-chevron"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 3.5l5 4.5-5 4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          </div>
+        </div>
+      </div>
+      <div class="tabbar">
+        <div class="tab-item">
+          <svg width="23" height="23" viewBox="0 0 23 23" fill="none"><path d="M4 6.5C4 5.1 5.1 4 6.5 4h10C17.9 4 19 5.1 19 6.5v7c0 1.4-1.1 2.5-2.5 2.5H9l-4 3.5v-3.5H6.5C5.1 16 4 14.9 4 13.5v-7z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
+          <span class="ti-label">Чаты</span>
+        </div>
+        <div class="tab-item">
+          <svg width="23" height="23" viewBox="0 0 23 23" fill="none"><circle cx="6" cy="6" r="2.2" stroke="currentColor" stroke-width="1.7"/><circle cx="17" cy="11.5" r="2.2" stroke="currentColor" stroke-width="1.7"/><circle cx="7.5" cy="17.5" r="2.2" stroke="currentColor" stroke-width="1.7"/><path d="M7.7 7.5l7.6 2.8M15.4 13.4l-6.3 3" stroke="currentColor" stroke-width="1.5"/></svg>
+          <span class="ti-label">Навигатор</span>
+        </div>
+        <div class="tab-item active">
+          <svg width="23" height="23" viewBox="0 0 23 23" fill="none"><rect x="3.5" y="5" width="16" height="13" rx="2.6" stroke="currentColor" stroke-width="1.7"/><path d="M10 9.3l4 2.2-4 2.2V9.3z" fill="currentColor"/></svg>
+          <span class="ti-label">Видео</span>
+        </div>
+        <div class="tab-item">
+          <svg width="23" height="23" viewBox="0 0 23 23" fill="none"><path d="M11.5 3.5l7.5 4-7.5 4-7.5-4 7.5-4z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M4.5 11.5l7 3.7 7-3.7M4.5 15l7 3.7 7-3.7" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+          <span class="ti-label">Материалы</span>
+        </div>
+        <div class="tab-item">
+          <svg width="23" height="23" viewBox="0 0 23 23" fill="none"><path d="M6 4h8l4 4v11H6V4z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M8.5 9.5h6M8.5 12.5h6M8.5 15.5h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          <span class="ti-label">Летописи</span>
+          <span class="ti-badge">9</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

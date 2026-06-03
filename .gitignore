@@ -42,6 +42,12 @@ yarn-debug.*
 yarn-error.*
 ios/main.jsbundle
 
+# Next.js / Web
+.next/
+out/
+*.tsbuildinfo
+next-env.d.ts
+
 # Android
 *.apk
 *.aab
@@ -80,3 +86,4 @@ apps/mobile/.env.preview
 mockups/
 .antigravityignore
 .antigravitycli/
+.xxxx/
