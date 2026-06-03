@@ -15,7 +15,7 @@ import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { useLocalSearchParams, Stack, useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useHeaderHeight } from '@react-navigation/elements';
+import { useHeaderHeight } from 'expo-router/react-navigation';
 import { api } from '../../services/api';
 import { COLORS, FONTS } from '../../constants/Config';
 import { useWebSocket } from '../../hooks/useWebSocket';
