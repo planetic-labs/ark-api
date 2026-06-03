@@ -1,0 +1,29 @@
+version: 2
+updates:
+  # 1. Node.js packages (pnpm monorepo at root)
+  # Dependabot supports pnpm lockfiles and workspace updates out of the box.
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+
+  # 2. Python dependencies for backend
+  - package-ecosystem: "pip"
+    directory: "/backend"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+
+  # 3. Docker base images updates in Dockerfiles
+  - package-ecosystem: "docker"
+    directory: "/infra/docker"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 3
+
+  # 4. GitHub Actions workflow updates
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
