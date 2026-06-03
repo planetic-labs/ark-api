@@ -3,7 +3,7 @@ FROM node:24-alpine AS builder
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-RUN npm i -g pnpm@10.34.1
+RUN npm i -g pnpm@11.5.1
 
 # Copy files necessary for installing dependencies
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
