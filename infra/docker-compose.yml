@@ -26,7 +26,10 @@ services:
 
   # База данных
   db:
-    image: postgres:16-alpine
+    build:
+      context: ..
+      dockerfile: infra/docker/postgres.Dockerfile
+    command: ["postgres", "-c", "shared_preload_libraries=pg_partman_bgw", "-c", "pg_partman_bgw.dbname=ark", "-c", "pg_partman_bgw.role=postgres"]
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
@@ -36,7 +39,7 @@ services:
     ports:
       - "127.0.0.1:5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql
 
   # Redis (для pub/sub и кэша)
   redis:
