@@ -14,6 +14,15 @@ permissions:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - image-name: ark-api
+            file: infra/docker/api.Dockerfile
+          - image-name: ark-web
+            file: infra/docker/web.Dockerfile
+          - image-name: ark-db
+            file: infra/docker/postgres.Dockerfile
     steps:
       - name: Checkout repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -47,10 +56,10 @@ jobs:
         uses: docker/build-push-action@ca2427b9d4ec95983d0d0f414f689e4c840748b0 # v5.4.0
         with:
           context: .
-          file: infra/docker/api.Dockerfile
+          file: ${{ matrix.file }}
           push: true
           tags: |
-            ghcr.io/${{ steps.get_tag.outputs.owner }}/ark-api:${{ steps.get_tag.outputs.tag }}
-            ghcr.io/${{ steps.get_tag.outputs.owner }}/ark-api:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+            ghcr.io/${{ steps.get_tag.outputs.owner }}/${{ matrix.image-name }}:${{ steps.get_tag.outputs.tag }}
+            ghcr.io/${{ steps.get_tag.outputs.owner }}/${{ matrix.image-name }}:latest
+          cache-from: type=gha,scope=${{ matrix.image-name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.image-name }}
