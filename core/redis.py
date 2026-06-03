@@ -1,5 +1,5 @@
 import redis.asyncio as redis
-from backend.core.config import settings
+from core.config import settings
 
 # Create a connection pool
 pool = redis.ConnectionPool.from_url(

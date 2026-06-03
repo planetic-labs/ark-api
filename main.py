@@ -8,12 +8,12 @@ import jwt
 # Setup logging
 logger = structlog.get_logger()
 
-from backend.core.config import settings
-from backend.modules.auth.router import router as auth_router
-from backend.modules.users.router import router as users_router
-from backend.modules.messaging.router import router as messaging_router
-from backend.core.websocket import manager, redis_broadcast_reader
-from backend.modules.users.init_db import create_superuser_if_not_exists
+from core.config import settings
+from modules.auth.router import router as auth_router
+from modules.users.router import router as users_router
+from modules.messaging.router import router as messaging_router
+from core.websocket import manager, redis_broadcast_reader
+from modules.users.init_db import create_superuser_if_not_exists
 
 app = FastAPI(
     title="Ark Messenger API",
@@ -34,7 +34,7 @@ async def websocket_endpoint(
     websocket: WebSocket,
     token: str = None,
 ):
-    from backend.core.security import decode_token
+    from core.security import decode_token
     
     await websocket.accept()
     logger.info("WS handshake started", has_token=bool(token))
@@ -96,10 +96,10 @@ async def health_check():
 
 @app.get("/.well-known/jwks.json")
 async def jwks():
-    from backend.core.security import get_jwks
+    from core.security import get_jwks
     return get_jwks()
 
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("backend.main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

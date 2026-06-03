@@ -4,10 +4,10 @@ import jwt
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
-from backend.core.config import settings
-from backend.core.database import get_session
-from backend.core.security import decode_token
-from backend.modules.users.models import User
+from core.config import settings
+from core.database import get_session
+from core.security import decode_token
+from modules.users.models import User
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"/api/v1/auth/verify-code")
 

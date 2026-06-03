@@ -1,7 +1,7 @@
 from datetime import datetime
 from sqlalchemy import String, ForeignKey, Table, Column, DateTime, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship, foreign, remote
-from backend.core.models import Base, pk_ulid
+from core.models import Base, pk_ulid
 
 # Association table for group chat members
 chat_members = Table(

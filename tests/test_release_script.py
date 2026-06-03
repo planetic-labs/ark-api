@@ -2,7 +2,7 @@ import sys
 from pathlib import Path
 
 # Add scripts directory to sys.path
-scripts_dir = Path(__file__).parent.parent.parent / "scripts"
+scripts_dir = Path(__file__).parent.parent / "scripts"
 sys.path.append(str(scripts_dir))
 
 from create_release import calculate_next_version

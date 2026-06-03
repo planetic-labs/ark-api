@@ -5,7 +5,7 @@ import httpx
 import structlog
 from typing import Any
 from arq.connections import RedisSettings
-from backend.core.config import settings
+from core.config import settings
 
 logger = structlog.get_logger()
 

@@ -1,7 +1,7 @@
 import json
 import asyncio
 from fastapi import WebSocket, WebSocketDisconnect
-from backend.core.redis import get_redis_client
+from core.redis import get_redis_client
 import structlog
 
 logger = structlog.get_logger()
