@@ -7,6 +7,18 @@ export class ApiError extends Error {
   }
 }
 
+let isRefreshing = false;
+let refreshSubscribers: ((token: string) => void)[] = [];
+
+function subscribeTokenRefresh(cb: (token: string) => void) {
+  refreshSubscribers.push(cb);
+}
+
+function onRefreshed(token: string) {
+  refreshSubscribers.forEach((cb) => cb(token));
+  refreshSubscribers = [];
+}
+
 export async function apiRequest<T>(
   path: string,
   options: RequestInit = {},
@@ -24,6 +36,52 @@ export async function apiRequest<T>(
     },
   });
 
+  if (response.status === 401 && !path.includes('/auth/refresh') && !token) {
+    if (!isRefreshing) {
+      isRefreshing = true;
+      try {
+        const refreshResponse = await fetch('/api/auth/refresh', { method: 'POST' });
+        if (refreshResponse.ok) {
+          const data = await refreshResponse.json();
+          if (data.access_token) {
+            useAuthStore.getState().setAccessToken(data.access_token);
+            isRefreshing = false;
+            onRefreshed(data.access_token);
+          } else {
+            isRefreshing = false;
+            useAuthStore.getState().logout();
+          }
+        } else {
+          isRefreshing = false;
+          useAuthStore.getState().logout();
+        }
+      } catch (err) {
+        isRefreshing = false;
+        useAuthStore.getState().logout();
+      }
+    }
+
+    return new Promise<T>((resolve, reject) => {
+      subscribeTokenRefresh((newToken) => {
+        resolve(
+          apiRequest<T>(path, {
+            ...options,
+            headers: {
+              ...options.headers,
+              Authorization: `Bearer ${newToken}`,
+            },
+          })
+        );
+      });
+      
+      setTimeout(() => {
+        if (!useAuthStore.getState().accessToken) {
+          reject(new ApiError(401, { detail: 'Unauthorized' }));
+        }
+      }, 5000);
+    });
+  }
+
   if (!response.ok) {
     let errorData = null;
     try {
@@ -34,7 +92,6 @@ export async function apiRequest<T>(
     throw new ApiError(response.status, errorData);
   }
 
-  // Handle empty responses
   if (response.status === 204) {
     return {} as T;
   }
