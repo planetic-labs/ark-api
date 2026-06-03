@@ -3,6 +3,8 @@ import { User } from '@ark/shared-types';
 
 export interface UserAdminCreateData {
   email: string;
+  first_name?: string;
+  last_name?: string;
   full_name?: string;
   role?: string;
   is_active?: boolean;
@@ -11,6 +13,8 @@ export interface UserAdminCreateData {
 }
 
 export interface UserAdminUpdateData {
+  first_name?: string;
+  last_name?: string;
   full_name?: string;
   avatar_url?: string;
   roles?: string[];

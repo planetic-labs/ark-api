@@ -126,7 +126,8 @@ async def test_auth_setup(client, db):
     # Post setup profile data
     response = await client.post("/api/v1/auth/setup", json={
         "setup_token": setup_token,
-        "name": "Jane Doe",
+        "first_name": "Jane",
+        "last_name": "Doe",
         "avatar_url": "http://avatar.com/jane"
     })
     assert response.status_code == 200
@@ -140,7 +141,8 @@ async def test_auth_setup(client, db):
     result = await db.execute(select(User).where(User.email == "setup@ark.com"))
     updated_user = result.scalar_one()
     assert updated_user.status == "active"
-    assert updated_user.name == "Jane Doe"
+    assert updated_user.first_name == "Jane"
+    assert updated_user.last_name == "Doe"
     assert updated_user.avatar_url == "http://avatar.com/jane"
     assert any(r.name == "student" for r in updated_user.roles)
 

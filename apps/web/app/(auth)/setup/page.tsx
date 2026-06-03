@@ -9,7 +9,8 @@ function SetupProfileContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const setupToken = searchParams.get('token') || '';
-  const [name, setName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const { setup, isSettingUp } = useAuth();
@@ -24,15 +25,16 @@ function SetupProfileContent() {
     e.preventDefault();
     setErrorMsg('');
 
-    if (!name.trim()) {
-      setErrorMsg('Пожалуйста, введите ваше имя');
+    if (!firstName.trim() || !lastName.trim()) {
+      setErrorMsg('Пожалуйста, введите имя и фамилию');
       return;
     }
 
     try {
       await setup({
         setupToken,
-        name: name.trim(),
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
         avatarUrl: avatarUrl.trim() || undefined,
       });
       router.push(ROUTES.chats);
@@ -49,24 +51,41 @@ function SetupProfileContent() {
         </p>
       </div>
 
-      <div className="flex flex-col gap-2">
-        <label htmlFor="name" className="font-body text-xs font-semibold text-ink-soft select-none">
-          Ваше настоящее Имя и Фамилия
-        </label>
-        <input
-          id="name"
-          type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Алексей Прусиков"
-          disabled={isSettingUp}
-          className="w-full bg-bg-warm border border-line rounded-xl px-4 py-3 text-sm text-ink outline-none transition-all placeholder:text-ink-faint focus:border-amber focus:ring-1 focus:ring-amber"
-          required
-        />
-        <p className="font-mono text-[9px] text-ink-soft">
-          * По правилам общины: вводите реальные имя и фамилию на русском языке
-        </p>
+      <div className="flex gap-4">
+        <div className="flex-1 flex flex-col gap-2">
+          <label htmlFor="firstName" className="font-body text-xs font-semibold text-ink-soft select-none">
+            Имя
+          </label>
+          <input
+            id="firstName"
+            type="text"
+            value={firstName}
+            onChange={(e) => setFirstName(e.target.value)}
+            placeholder="Алексей"
+            disabled={isSettingUp}
+            className="w-full bg-bg-warm border border-line rounded-xl px-4 py-3 text-sm text-ink outline-none transition-all placeholder:text-ink-faint focus:border-amber focus:ring-1 focus:ring-amber"
+            required
+          />
+        </div>
+        <div className="flex-1 flex flex-col gap-2">
+          <label htmlFor="lastName" className="font-body text-xs font-semibold text-ink-soft select-none">
+            Фамилия
+          </label>
+          <input
+            id="lastName"
+            type="text"
+            value={lastName}
+            onChange={(e) => setLastName(e.target.value)}
+            placeholder="Прусиков"
+            disabled={isSettingUp}
+            className="w-full bg-bg-warm border border-line rounded-xl px-4 py-3 text-sm text-ink outline-none transition-all placeholder:text-ink-faint focus:border-amber focus:ring-1 focus:ring-amber"
+            required
+          />
+        </div>
       </div>
+      <p className="font-mono text-[9px] text-ink-soft -mt-2">
+        * По правилам общины: вводите реальные имя и фамилию на русском языке
+      </p>
 
       <div className="flex flex-col gap-2">
         <label htmlFor="avatarUrl" className="font-body text-xs font-semibold text-ink-soft select-none">

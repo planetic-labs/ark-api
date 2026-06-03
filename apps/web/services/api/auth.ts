@@ -28,10 +28,10 @@ export const authApi = {
     });
   },
 
-  setup: async (setupToken: string, name: string, avatarUrl?: string): Promise<any> => {
+  setup: async (setupToken: string, firstName: string, lastName: string, avatarUrl?: string): Promise<any> => {
     return apiRequest<any>('/auth/setup', {
       method: 'POST',
-      body: JSON.stringify({ setup_token: setupToken, name, avatar_url: avatarUrl }),
+      body: JSON.stringify({ setup_token: setupToken, first_name: firstName, last_name: lastName, avatar_url: avatarUrl }),
     });
   },
 

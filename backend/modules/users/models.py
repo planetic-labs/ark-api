@@ -68,7 +68,8 @@ class User(Base):
     is_approved: Mapped[bool] = mapped_column(Boolean, default=False)
     
     # Updated fields matching GEMINI.md
-    name: Mapped[str] = mapped_column(String(255), default="")
+    first_name: Mapped[str] = mapped_column(String(255), default="")
+    last_name: Mapped[str] = mapped_column(String(255), default="")
     avatar_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
     status: Mapped[str] = mapped_column(String(50), default="created")
     email_verified: Mapped[bool] = mapped_column(Boolean, default=False)
@@ -76,11 +77,30 @@ class User(Base):
 
     @property
     def full_name(self) -> str:
-        return self.name
+        if self.first_name and self.last_name:
+            return f"{self.first_name} {self.last_name}"
+        return self.first_name or self.last_name or ""
 
     @full_name.setter
     def full_name(self, value: str):
-        self.name = value or ""
+        if not value:
+            self.first_name = ""
+            self.last_name = ""
+            return
+        parts = value.strip().split(maxsplit=1)
+        if len(parts) == 2:
+            self.first_name, self.last_name = parts
+        else:
+            self.first_name = parts[0]
+            self.last_name = ""
+
+    @property
+    def name(self) -> str:
+        return self.full_name
+
+    @name.setter
+    def name(self, value: str):
+        self.full_name = value
 
     @property
     def is_admin(self) -> bool:

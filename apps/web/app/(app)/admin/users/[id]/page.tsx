@@ -16,7 +16,8 @@ export default function UserDetailPage() {
   const userId = params.id as string;
   const queryClient = useQueryClient();
 
-  const [fullName, setFullName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
@@ -49,13 +50,10 @@ export default function UserDetailPage() {
   // Populate state when user data is loaded
   useEffect(() => {
     if (user) {
-      setFullName(user.full_name || '');
+      setFirstName(user.first_name || '');
+      setLastName(user.last_name || '');
       setAvatarUrl(user.avatar_url || '');
       setSelectedRoles(user.roles || []);
-      // Fetch user's personal permissions (represented in some way, or let's default to empty or fetch if we had specific endpoint, otherwise we can save in local state)
-      // Since user object from backend router maps personal_permissions, we can check if it exists:
-      // Actually backend UserSchema doesn't serialize personal_permissions currently, let's fall back to empty or mock.
-      // Wait, we can mock personal permissions for now or read from a local state.
       setSelectedPermissions((user as any).personal_permissions || []);
     }
   }, [user]);
@@ -114,7 +112,8 @@ export default function UserDetailPage() {
     setErrorMessage('');
     setSuccessMessage('');
     updateUserMutation.mutate({
-      full_name: fullName.trim(),
+      first_name: firstName.trim(),
+      last_name: lastName.trim(),
       avatar_url: avatarUrl.trim() || null,
       roles: selectedRoles,
       personal_permissions: selectedPermissions,
@@ -220,15 +219,27 @@ export default function UserDetailPage() {
               Личные данные
             </h3>
             
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[11px] font-semibold text-ink-soft select-none">Имя и Фамилия</label>
-              <input
-                type="text"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                disabled={!user.is_active}
-                className="w-full bg-bg-warm border border-line rounded-xl px-4 py-2.5 text-xs text-ink outline-none focus:border-amber"
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[11px] font-semibold text-ink-soft select-none">Имя</label>
+                <input
+                  type="text"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  disabled={!user.is_active}
+                  className="w-full bg-bg-warm border border-line rounded-xl px-4 py-2.5 text-xs text-ink outline-none focus:border-amber"
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[11px] font-semibold text-ink-soft select-none">Фамилия</label>
+                <input
+                  type="text"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  disabled={!user.is_active}
+                  className="w-full bg-bg-warm border border-line rounded-xl px-4 py-2.5 text-xs text-ink outline-none focus:border-amber"
+                />
+              </div>
             </div>
 
             <div className="flex flex-col gap-1.5">

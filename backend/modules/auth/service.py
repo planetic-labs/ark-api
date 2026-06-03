@@ -121,7 +121,7 @@ class AuthService:
             }
         return None
 
-    async def setup(self, setup_token: str, name: str | None, avatar_url: str | None) -> dict | None:
+    async def setup(self, setup_token: str, first_name: str | None, last_name: str | None, avatar_url: str | None) -> dict | None:
         user_id = await get_setup_token(setup_token)
         if not user_id:
             return None
@@ -131,8 +131,10 @@ class AuthService:
         if not user or user.status == 'disabled':
             return None
             
-        if name:
-            user.name = name
+        if first_name:
+            user.first_name = first_name
+        if last_name:
+            user.last_name = last_name
         user.status = 'active'
         if avatar_url:
             user.avatar_url = avatar_url

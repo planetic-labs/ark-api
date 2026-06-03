@@ -58,7 +58,8 @@ async def create_superuser_if_not_exists() -> None:
                         is_approved=True,
                         email_verified=True,
                         status="active",
-                        name="Admin"
+                        first_name="Admin",
+                        last_name=""
                     )
                     superuser.roles.append(admin_role)
                     session.add(superuser)

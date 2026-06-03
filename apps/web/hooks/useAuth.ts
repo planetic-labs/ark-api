@@ -36,8 +36,8 @@ export function useAuth() {
   });
 
   const setupMutation = useMutation({
-    mutationFn: async ({ setupToken, name, avatarUrl }: { setupToken: string; name: string; avatarUrl?: string }) => {
-      const result = await authApi.setup(setupToken, name, avatarUrl);
+    mutationFn: async ({ setupToken, firstName, lastName, avatarUrl }: { setupToken: string; firstName: string; lastName: string; avatarUrl?: string }) => {
+      const result = await authApi.setup(setupToken, firstName, lastName, avatarUrl);
       return result;
     },
     onSuccess: (data) => {

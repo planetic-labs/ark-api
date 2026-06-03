@@ -20,7 +20,8 @@ class VerifyCodeResponseSchema(BaseModel):
 
 class SetupProfileSchema(BaseModel):
     setup_token: str
-    name: str = Field(..., min_length=1, max_length=100)
+    first_name: str = Field(..., min_length=1, max_length=100)
+    last_name: str = Field(..., min_length=1, max_length=100)
     avatar_url: str | None = None
 
 class TokenResponseSchema(BaseModel):
