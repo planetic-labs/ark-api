@@ -3,7 +3,9 @@ import { NextResponse } from 'next/server';
 export async function POST(request: Request) {
   try {
     const { email, code } = await request.json();
-    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL && process.env.NEXT_PUBLIC_API_URL.startsWith('http')
+      ? process.env.NEXT_PUBLIC_API_URL
+      : 'http://127.0.0.1:8000/api/v1';
 
     const response = await fetch(`${backendUrl}/auth/verify-code`, {
       method: 'POST',

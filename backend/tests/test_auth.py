@@ -348,7 +348,7 @@ async def test_rbac_permissions(client, db):
 
     # Try creating user as student -> 403 Forbidden (require_role("admin"))
     response = await client.post(
-        "/api/v1/users/",
+        "/api/v1/users",
         json={
             "email": "new-from-test@ark.com",
             "full_name": "New User",
@@ -362,7 +362,7 @@ async def test_rbac_permissions(client, db):
 
     # Try creating user as admin -> 201 Created
     response = await client.post(
-        "/api/v1/users/",
+        "/api/v1/users",
         json={
             "email": "new-from-test@ark.com",
             "full_name": "New User",
@@ -393,7 +393,7 @@ async def test_approved_user_restriction(client, db):
 
     # Access /api/v1/users/ -> 403 Forbidden
     response = await client.get(
-        "/api/v1/users/",
+        "/api/v1/users",
         headers={"Authorization": f"Bearer {token}"}
     )
     assert response.status_code == 403
