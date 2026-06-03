@@ -26,6 +26,16 @@ config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
 
 target_metadata = Base.metadata
 
+def include_object(object, name, type_, reflected, compare_to):
+    if type_ == "table":
+        # Ignore partition tables managed by pg_partman
+        if name.startswith("messages_") and reflected:
+            return False
+        # Ignore pg_partman schema or internal configuration tables
+        if reflected and (object.schema == "partman" or name.startswith("part_config")):
+            return False
+    return True
+
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode."""
     url = config.get_main_option("sqlalchemy.url")
@@ -34,13 +44,18 @@ def run_migrations_offline() -> None:
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
+        include_object=include_object,
     )
 
     with context.begin_transaction():
         context.run_migrations()
 
 def do_run_migrations(connection):
-    context.configure(connection=connection, target_metadata=target_metadata)
+    context.configure(
+        connection=connection, 
+        target_metadata=target_metadata,
+        include_object=include_object,
+    )
 
     with context.begin_transaction():
         context.run_migrations()
