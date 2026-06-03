@@ -15,7 +15,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-ark}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -42,7 +42,7 @@ services:
       - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-ark}
     depends_on:
       db:
-        condition: service_healthy
+         condition: service_healthy
     command: ["uv", "run", "--project", "backend", "alembic", "-c", "backend/alembic.ini", "upgrade", "head"]
 
   # Бэкенд (FastAPI)
@@ -95,6 +95,7 @@ services:
       - .env
     environment:
       - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+      - INTERNAL_API_URL=${INTERNAL_API_URL:-http://api:8000}
     depends_on:
       - api
 
