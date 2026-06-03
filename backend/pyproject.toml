@@ -14,7 +14,7 @@ dependencies = [
     "structlog>=24.1.0",
     "python-multipart>=0.0.30",
     "alembic>=1.13.1",
-    "pydantic-settings>=2.2.1",
+    "pydantic-settings>=2.14.1",
     "pyjwt[crypto]>=2.8.0",
     "resend>=0.8.0",
 ]
