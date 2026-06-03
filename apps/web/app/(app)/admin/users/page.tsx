@@ -19,7 +19,8 @@ export default function UsersAdminPage() {
 
   // Form states for creating a new user
   const [newEmail, setNewEmail] = useState('');
-  const [newFullName, setNewFullName] = useState('');
+  const [newFirstName, setNewFirstName] = useState('');
+  const [newLastName, setNewLastName] = useState('');
   const [newRole, setNewRole] = useState('STUDENT');
   const [newIsApproved, setNewIsApproved] = useState(true);
   const [formError, setFormError] = useState('');
@@ -38,7 +39,8 @@ export default function UsersAdminPage() {
       setIsModalOpen(false);
       // Reset form
       setNewEmail('');
-      setNewFullName('');
+      setNewFirstName('');
+      setNewLastName('');
       setNewRole('STUDENT');
       setNewIsApproved(true);
       setFormError('');
@@ -57,7 +59,8 @@ export default function UsersAdminPage() {
     }
     createUserMutation.mutate({
       email: newEmail,
-      full_name: newFullName,
+      first_name: newFirstName,
+      last_name: newLastName,
       role: newRole,
       is_active: true,
       is_approved: newIsApproved,
@@ -282,17 +285,31 @@ export default function UsersAdminPage() {
                 />
               </div>
 
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[11px] font-semibold text-ink-soft select-none">
-                  Имя и Фамилия
-                </label>
-                <input
-                  type="text"
-                  value={newFullName}
-                  onChange={(e) => setNewFullName(e.target.value)}
-                  placeholder="Иван Петров"
-                  className="w-full bg-bg-warm border border-line rounded-xl px-3 py-2.5 text-xs text-ink outline-none focus:border-amber"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[11px] font-semibold text-ink-soft select-none">
+                    Имя
+                  </label>
+                  <input
+                    type="text"
+                    value={newFirstName}
+                    onChange={(e) => setNewFirstName(e.target.value)}
+                    placeholder="Иван"
+                    className="w-full bg-bg-warm border border-line rounded-xl px-3 py-2.5 text-xs text-ink outline-none focus:border-amber"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[11px] font-semibold text-ink-soft select-none">
+                    Фамилия
+                  </label>
+                  <input
+                    type="text"
+                    value={newLastName}
+                    onChange={(e) => setNewLastName(e.target.value)}
+                    placeholder="Петров"
+                    className="w-full bg-bg-warm border border-line rounded-xl px-3 py-2.5 text-xs text-ink outline-none focus:border-amber"
+                  />
+                </div>
               </div>
 
               <div className="flex flex-col gap-1.5">

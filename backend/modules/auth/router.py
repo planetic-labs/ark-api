@@ -42,7 +42,7 @@ async def setup(
     body: SetupProfileSchema,
     service: AuthService = Depends(get_auth_service)
 ):
-    result = await service.setup(body.setup_token, body.name, body.avatar_url)
+    result = await service.setup(body.setup_token, body.first_name, body.last_name, body.avatar_url)
     if not result:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

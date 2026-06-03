@@ -26,7 +26,7 @@ async def list_users(
     List all users in the system.
     """
     result = await session.execute(
-        select(User).where(User.deleted_at.is_(None)).order_by(User.name)
+        select(User).where(User.deleted_at.is_(None)).order_by(User.first_name, User.last_name)
     )
     return result.scalars().all()
 
@@ -61,7 +61,12 @@ async def create_user(
         avatar_url=body.avatar_url,
         status="active" if body.is_approved else "created"
     )
-    new_user.full_name = body.full_name or ""
+    if body.first_name is not None:
+        new_user.first_name = body.first_name
+    if body.last_name is not None:
+        new_user.last_name = body.last_name
+    if body.full_name is not None and not (body.first_name or body.last_name):
+        new_user.full_name = body.full_name
     new_user.roles.append(role_obj)
     
     session.add(new_user)
@@ -99,7 +104,11 @@ async def update_user(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
-    if body.full_name is not None:
+    if body.first_name is not None:
+        user.first_name = body.first_name
+    if body.last_name is not None:
+        user.last_name = body.last_name
+    if body.full_name is not None and not (body.first_name or body.last_name):
         user.full_name = body.full_name
     if body.avatar_url is not None:
         user.avatar_url = body.avatar_url
