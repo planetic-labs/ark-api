@@ -29,7 +29,7 @@
     "expo-image": "~3.0.11",
     "expo-linking": "~8.0.12",
     "expo-notifications": "~0.32.17",
-    "expo-router": "~6.0.23",
+    "expo-router": "~56.2.8",
     "expo-status-bar": "~3.0.9",
     "expo-updates": "^29.0.17",
     "metro-runtime": "^0.84.4",
