@@ -63,26 +63,32 @@ async def refresh_token(
         )
     return tokens
 
+from fastapi.security import OAuth2PasswordBearer
+
+oauth2_scheme_optional = OAuth2PasswordBearer(tokenUrl=f"/api/v1/auth/verify-code", auto_error=False)
+
 @router.post("/logout", response_model=MsgSchema)
 async def logout(
-    token: str = Depends(oauth2_scheme),
+    body: RefreshTokenSchema | None = None,
+    token: str | None = Depends(oauth2_scheme_optional),
     service: AuthService = Depends(get_auth_service)
 ):
-    try:
-        payload = decode_token(token)
-        jti = payload.get("jti")
-    except Exception:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token"
-        )
-    if not jti:
+    jti = None
+    if token:
+        try:
+            payload = decode_token(token)
+            jti = payload.get("jti")
+        except Exception:
+            pass
+            
+    refresh_token_str = body.refresh_token if body else None
+    
+    if not jti and not refresh_token_str:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Token does not contain a session identifier"
+            detail="Either a valid access token or a refresh token must be provided"
         )
-    
-    # Revoke the refresh token session
-    await service.logout(jti)
+        
+    await service.logout(jti=jti, refresh_token_str=refresh_token_str)
     return {"message": "Logged out successfully"}
 

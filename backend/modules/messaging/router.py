@@ -55,4 +55,7 @@ async def get_messages(
     current_user: User = Depends(require_approved_user),
     service: MessagingService = Depends(get_messaging_service)
 ):
-    return await service.get_chat_messages(chat_id)
+    try:
+        return await service.get_chat_messages(chat_id, current_user.id)
+    except Exception as e:
+        raise HTTPException(status_code=403, detail=str(e))
