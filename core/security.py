@@ -6,7 +6,7 @@ from typing import Any
 from pathlib import Path
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives import serialization
-from backend.core.config import settings
+from core.config import settings
 
 ALGORITHM = "RS256"
 

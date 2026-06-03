@@ -7,13 +7,13 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 WORKDIR /app
 
 # Copy dependency files
-COPY backend/pyproject.toml backend/uv.lock backend/package.json ./backend/
+COPY pyproject.toml uv.lock package.json ./
 
 # Install dependencies using uv
-RUN cd backend && uv sync --frozen --no-dev
+RUN uv sync --frozen --no-dev
 
 # Copy the rest of the backend code
-COPY backend/ ./backend/
+COPY . .
 
 # Set environment variables
 ENV PYTHONPATH=/app

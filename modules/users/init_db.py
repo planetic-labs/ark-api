@@ -1,8 +1,8 @@
 import structlog
 from sqlalchemy import select
-from backend.core.config import settings
-from backend.core.database import AsyncSessionLocal
-from backend.modules.users.models import User, Role
+from core.config import settings
+from core.database import AsyncSessionLocal
+from modules.users.models import User, Role
 
 logger = structlog.get_logger()
 

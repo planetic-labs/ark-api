@@ -2,7 +2,7 @@ from datetime import datetime
 import sqlalchemy as sa
 from sqlalchemy import Table, Column, String, Boolean, DateTime, ForeignKey, ARRAY
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from backend.core.models import Base, pk_ulid
+from core.models import Base, pk_ulid
 
 # Association table for User <-> Role (Many-to-Many)
 user_roles = Table(
@@ -131,7 +131,7 @@ class User(Base):
         lazy="selectin"
     )
 
-    from backend.modules.messaging.models import chat_members
+    from modules.messaging.models import chat_members
     chats: Mapped[list["Chat"]] = relationship(
         secondary=chat_members,
         back_populates="members"

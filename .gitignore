@@ -5,16 +5,14 @@ docs/requirements.pdf
 # Dependencies
 node_modules/
 .pnpm-debug.log
-backend/.venv/
-backend/.uv/
+.venv/
+.uv/
 
 # Environment variables and secrets
 .env
 .env.local
 .env.*.local
-backend/.env
-backend/.keys/
-apps/mobile/.env
+.keys/
 
 # Python
 __pycache__/
@@ -30,7 +28,7 @@ ENV/
 .mypy_cache/
 .coverage
 htmlcov/
-backend/alembic/versions/*.pyc
+alembic/versions/*.pyc
 
 # Expo / React Native
 .expo/

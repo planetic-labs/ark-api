@@ -2,11 +2,11 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
-from backend.core.database import get_session
-from backend.modules.users.dependencies import get_current_user, require_role, require_approved_user
-from backend.modules.users.models import User, Role
-from backend.modules.users.schemas import UserSchema, UserCreateSchema, UserAdminUpdateSchema, RoleSchema, RoleCreateSchema, PermissionSchema, ServiceClientSchema, ServiceClientCreateSchema, ServiceClientCreateResponseSchema
-from backend.modules.users.models import User, Role, Permission, ServiceClient
+from core.database import get_session
+from modules.users.dependencies import get_current_user, require_role, require_approved_user
+from modules.users.models import User, Role
+from modules.users.schemas import UserSchema, UserCreateSchema, UserAdminUpdateSchema, RoleSchema, RoleCreateSchema, PermissionSchema, ServiceClientSchema, ServiceClientCreateSchema, ServiceClientCreateResponseSchema
+from modules.users.models import User, Role, Permission, ServiceClient
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -121,7 +121,7 @@ async def update_user(
         user.status = body.status
         
     if body.is_active is False or body.status == "disabled":
-        from backend.modules.auth.models import RefreshToken
+        from modules.auth.models import RefreshToken
         await session.execute(
             sa.delete(RefreshToken).where(RefreshToken.user_id == user_id)
         )
@@ -171,7 +171,7 @@ async def delete_user(
     from datetime import datetime
     user.deleted_at = datetime.utcnow()
     
-    from backend.modules.auth.models import RefreshToken
+    from modules.auth.models import RefreshToken
     await session.execute(
         sa.delete(RefreshToken).where(RefreshToken.user_id == user_id)
     )

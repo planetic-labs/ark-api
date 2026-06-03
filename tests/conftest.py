@@ -7,9 +7,9 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sess
 from sqlalchemy.pool import NullPool
 from httpx import AsyncClient, ASGITransport
 
-from backend.main import app
-from backend.core.database import get_session
-from backend.core.config import settings
+from main import app
+from core.database import get_session
+from core.config import settings
 
 # Use NullPool for tests to guarantee completely isolated connections per session
 # and prevent asyncpg interface collisions (concurrency errors)
@@ -35,9 +35,9 @@ def event_loop():
 
 @pytest_asyncio.fixture(scope="function", autouse=True)
 async def reset_redis_pool():
-    import backend.core.redis as r
+    import core.redis as r
     import redis.asyncio as redis
-    from backend.core.config import settings
+    from core.config import settings
     
     # Close old pool if any
     try:

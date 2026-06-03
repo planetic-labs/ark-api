@@ -1,12 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from backend.core.database import get_session
-from backend.modules.users.dependencies import require_approved_user
-from backend.modules.users.models import User
-from backend.modules.messaging.schemas import (
+from core.database import get_session
+from modules.users.dependencies import require_approved_user
+from modules.users.models import User
+from modules.messaging.schemas import (
     ChatSchema, ChatCreateSchema, MessageSchema, MessageCreateSchema
 )
-from backend.modules.messaging.service import MessagingService
+from modules.messaging.service import MessagingService
 
 import structlog
 logger = structlog.get_logger()

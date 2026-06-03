@@ -2,14 +2,14 @@ import secrets
 from datetime import datetime, timedelta, timezone
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from backend.core.redis import (
+from core.redis import (
     set_auth_code, get_auth_code, delete_auth_code,
     set_setup_token, get_setup_token, delete_setup_token
 )
-from backend.core.security import create_access_token, create_refresh_token, hash_token
-from backend.core.config import settings
-from backend.modules.users.models import User, Role
-from backend.modules.auth.models import RefreshToken
+from core.security import create_access_token, create_refresh_token, hash_token
+from core.config import settings
+from modules.users.models import User, Role
+from modules.auth.models import RefreshToken
 
 class AuthService:
     def __init__(self, session: AsyncSession):
@@ -41,7 +41,7 @@ class AuthService:
         code = "".join([secrets.choice("0123456789") for _ in range(6)])
         await set_auth_code(email, code)
         
-        from backend.core.redis import get_redis_client
+        from core.redis import get_redis_client
         async with get_redis_client() as redis_client:
             await redis_client.delete(f"auth:attempts:{email}")
         
@@ -64,7 +64,7 @@ class AuthService:
         return {"next": "enter_code"}
 
     async def verify_code(self, email: str, code: str) -> dict | None:
-        from backend.core.redis import get_redis_client
+        from core.redis import get_redis_client
         attempts_key = f"auth:attempts:{email}"
         
         async with get_redis_client() as redis_client:
@@ -270,13 +270,13 @@ class AuthService:
             await self.session.delete(db_token)
             await self.session.commit()
             
-            from backend.modules.auth.models import WebhookClient
+            from modules.auth.models import WebhookClient
             webhooks_result = await self.session.execute(
                 select(WebhookClient).where(WebhookClient.is_active == True)
             )
             webhooks = webhooks_result.scalars().all()
             
-            from backend.core.redis import enqueue_revocation_webhook
+            from core.redis import enqueue_revocation_webhook
             for webhook in webhooks:
                 await enqueue_revocation_webhook(
                     user_id=user_id,
