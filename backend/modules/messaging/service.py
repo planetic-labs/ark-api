@@ -92,7 +92,7 @@ class MessagingService:
         )
         self.session.add(message)
         await self.session.commit()
-        await self.session.refresh(message)
+        await self.session.refresh(message, ["sender"])
 
         # Broadcast via Redis
         await self._broadcast_message(message, body.chat_id, self.session)
@@ -135,7 +135,7 @@ class MessagingService:
                     )
                     session.add(new_msg)
                     await session.commit()
-                    await session.refresh(new_msg)
+                    await session.refresh(new_msg, ["sender"])
                     
                     # IMPORTANT: Also broadcast the bot's message!
                     await self._broadcast_message(new_msg, chat_id, session)
@@ -144,6 +144,7 @@ class MessagingService:
     async def get_chat_messages(self, chat_id: str, limit: int = 50) -> list[Message]:
         result = await self.session.execute(
             select(Message)
+            .options(selectinload(Message.sender))
             .where(Message.chat_id == chat_id)
             .order_by(Message.created_at.desc())
             .limit(limit)
