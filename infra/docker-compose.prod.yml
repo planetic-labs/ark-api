@@ -1,9 +1,7 @@
 services:
   # База данных PostgreSQL
   db:
-    build:
-      context: ..
-      dockerfile: infra/docker/postgres.Dockerfile
+    image: ghcr.io/${GH_OWNER:-planetic-labs}/ark-db:${IMAGE_TAG:-latest}
     command: ["postgres", "-c", "shared_preload_libraries=pg_partman_bgw", "-c", "pg_partman_bgw.dbname=${POSTGRES_DB}", "-c", "pg_partman_bgw.role=${POSTGRES_USER}"]
     restart: always
     environment:
@@ -87,9 +85,7 @@ services:
 
   # Веб-клиент (Next.js)
   web:
-    build:
-      context: ..
-      dockerfile: infra/docker/web.Dockerfile
+    image: ghcr.io/${GH_OWNER:-planetic-labs}/ark-web:${IMAGE_TAG:-latest}
     restart: always
     networks:
       - planetic-net
