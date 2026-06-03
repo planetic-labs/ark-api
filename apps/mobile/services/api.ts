@@ -86,10 +86,10 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ email, code }),
       }),
-    setup: (setupToken: string, name: string, avatarUrl?: string) =>
+    setup: (setupToken: string, firstName: string, lastName: string, avatarUrl?: string) =>
       request<any>('/auth/setup', {
         method: 'POST',
-        body: JSON.stringify({ setup_token: setupToken, name, avatar_url: avatarUrl }),
+        body: JSON.stringify({ setup_token: setupToken, first_name: firstName, last_name: lastName, avatar_url: avatarUrl }),
       }),
     refresh: (refreshToken: string) =>
       request<any>('/auth/refresh', {
