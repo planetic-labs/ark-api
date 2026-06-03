@@ -25,7 +25,9 @@ export async function apiRequest<T>(
   token?: string,
 ): Promise<T> {
   const accessToken = token ?? useAuthStore.getState().accessToken;
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+  const baseUrl = typeof window === 'undefined'
+    ? 'http://127.0.0.1:8000/api/v1'
+    : (process.env.NEXT_PUBLIC_API_URL || '/api/v1');
   
   const response = await fetch(`${baseUrl}${path}`, {
     ...options,

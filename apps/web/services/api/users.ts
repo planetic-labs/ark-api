@@ -41,7 +41,7 @@ export interface ServiceClientCreateResponse {
 
 export const usersApi = {
   list: async (): Promise<User[]> => {
-    return apiRequest<User[]>('/users/');
+    return apiRequest<User[]>('/users');
   },
 
   get: async (id: string): Promise<User> => {
@@ -49,7 +49,7 @@ export const usersApi = {
   },
 
   create: async (data: UserAdminCreateData): Promise<User> => {
-    return apiRequest<User>('/users/', {
+    return apiRequest<User>('/users', {
       method: 'POST',
       body: JSON.stringify(data),
     });
