@@ -17,7 +17,7 @@ async def get_me(current_user: User = Depends(get_current_user)):
     """
     return current_user
 
-@router.get("/", response_model=list[UserSchema])
+@router.get("", response_model=list[UserSchema])
 async def list_users(
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(require_approved_user)
@@ -30,7 +30,7 @@ async def list_users(
     )
     return result.scalars().all()
 
-@router.post("/", response_model=UserSchema, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=UserSchema, status_code=status.HTTP_201_CREATED)
 async def create_user(
     body: UserCreateSchema,
     session: AsyncSession = Depends(get_session),
