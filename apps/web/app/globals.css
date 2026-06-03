@@ -1,0 +1,40 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --canvas: #E7E3DA;
+  --bg: #FFFFFF;
+  --bg-warm: #FCFAF5;
+  --ink: #221E17;
+  --ink-soft: #6E655A;
+  --ink-faint: #A69D8F;
+  --line: #ECE7DD;
+  --line-soft: #F4F1EA;
+  --amber: #B9770C;
+  --amber-bright: #E0951A;
+  --amber-wash: #FAF1DC;
+  --warrior-bg: #FCF4E3;
+}
+
+body {
+  background-color: var(--canvas);
+  color: var(--ink);
+  min-height: 100vh;
+}
+
+/* Custom scrollbar matching mockup */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--ink-faint);
+}
