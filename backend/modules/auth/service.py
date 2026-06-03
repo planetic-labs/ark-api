@@ -1,4 +1,3 @@
-import random
 import secrets
 from datetime import datetime, timedelta, timezone
 from sqlalchemy import select
@@ -39,7 +38,7 @@ class AuthService:
         if not user or user.status == 'disabled':
             return {"error": "not_found"}
             
-        code = "".join([str(random.randint(0, 9)) for _ in range(6)])
+        code = "".join([secrets.choice("0123456789") for _ in range(6)])
         await set_auth_code(email, code)
         
         print(f"DEBUG: Auth code for {email} is {code}")
