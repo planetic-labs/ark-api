@@ -11,9 +11,9 @@ services:
       - "127.0.0.1:8000:8000"
     volumes:
       # Прокидываем код бэкенда для авторелоада (Hot Reload)
-      - ../backend:/app/backend
+      - ..:/app
     env_file:
-      - ../backend/.env
+      - ../.env
     environment:
       - DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/ark
       - REDIS_URL=redis://redis:6379/0
@@ -22,7 +22,7 @@ services:
     depends_on:
       - db
       - redis
-    command: ["uv", "run", "--project", "backend", "fastapi", "dev", "backend/main.py", "--host", "0.0.0.0"]
+    command: ["uv", "run", "fastapi", "dev", "main.py", "--host", "0.0.0.0"]
 
   # База данных
   db:
@@ -60,9 +60,9 @@ services:
     networks:
       - planetic-net
     volumes:
-      - ../backend:/app/backend
+      - ..:/app
     env_file:
-      - ../backend/.env
+      - ../.env
     environment:
       - DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/ark
       - REDIS_URL=redis://redis:6379/0
@@ -71,7 +71,7 @@ services:
     depends_on:
       - db
       - redis
-    command: ["uv", "run", "--project", "backend", "arq", "backend.core.worker.WorkerSettings"]
+    command: ["uv", "run", "arq", "core.worker.WorkerSettings"]
 
 volumes:
   postgres_data:

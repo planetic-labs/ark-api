@@ -1,9 +1,9 @@
 import pytest
 from sqlalchemy import select
-from backend.modules.users.models import User, Role, Permission
-from backend.modules.auth.models import RefreshToken
-from backend.core.redis import get_auth_code, set_setup_token
-from backend.core.security import create_access_token, hash_token
+from modules.users.models import User, Role, Permission
+from modules.auth.models import RefreshToken
+from core.redis import get_auth_code, set_setup_token
+from core.security import create_access_token, hash_token
 
 @pytest.mark.asyncio
 async def test_auth_identify(client, db):
@@ -248,8 +248,8 @@ async def test_auth_logout(client, db):
 @pytest.mark.asyncio
 async def test_auth_logout_webhook_enqueued(client, db, monkeypatch):
     from unittest.mock import AsyncMock
-    import backend.core.redis as r
-    from backend.modules.auth.models import WebhookClient
+    import core.redis as r
+    from modules.auth.models import WebhookClient
     
     mock_enqueue = AsyncMock()
     monkeypatch.setattr(r, "enqueue_revocation_webhook", mock_enqueue)
@@ -418,8 +418,8 @@ async def test_approved_user_restriction(client, db):
 
 @pytest.mark.asyncio
 async def test_create_superuser_multiple(db, monkeypatch):
-    from backend.modules.users.init_db import create_superuser_if_not_exists
-    from backend.core.config import settings
+    from modules.users.init_db import create_superuser_if_not_exists
+    from core.config import settings
 
     # Setup: mock settings.SUPERUSER_EMAIL with multiple comma-separated emails
     monkeypatch.setattr(settings, "SUPERUSER_EMAIL", "admin1@ark.com, admin2@ark.com")
@@ -481,7 +481,7 @@ async def test_auth_verify_code_brute_force(client, db):
 
 @pytest.mark.asyncio
 async def test_messaging_chat_messages_bola(client, db):
-    from backend.modules.messaging.models import Chat, Message, chat_members
+    from modules.messaging.models import Chat, Message, chat_members
     
     role = Role(name="student", is_default=True)
     db.add(role)

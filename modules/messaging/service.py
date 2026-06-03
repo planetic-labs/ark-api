@@ -1,8 +1,8 @@
 from sqlalchemy import select, and_, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
-from backend.modules.messaging.models import Chat, Message, chat_members
-from backend.modules.messaging.schemas import ChatCreateSchema, MessageCreateSchema, MessageSchema
+from modules.messaging.models import Chat, Message, chat_members
+from modules.messaging.schemas import ChatCreateSchema, MessageCreateSchema, MessageSchema
 import json
 import asyncio
 
@@ -51,7 +51,7 @@ class MessagingService:
     async def _broadcast_message(self, message: Message, chat_id: str, session: AsyncSession):
         """Internal helper to publish message to Redis"""
         try:
-            from backend.core.redis import get_redis_client
+            from core.redis import get_redis_client
             
             # Get all chat members for targeting
             members_result = await session.execute(
@@ -104,8 +104,8 @@ class MessagingService:
 
     async def _handle_bot_response(self, chat_id: str, original_sender_id: str):
         """Simulate responses from Tron AI"""
-        from backend.core.database import AsyncSessionLocal
-        from backend.modules.users.models import User
+        from core.database import AsyncSessionLocal
+        from modules.users.models import User
         
         await asyncio.sleep(2)
         
