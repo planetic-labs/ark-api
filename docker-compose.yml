@@ -12,6 +12,7 @@ services:
     volumes:
       # Прокидываем код бэкенда для авторелоада (Hot Reload)
       - .:/app
+      - /app/.venv
     env_file:
       - .env
     environment:
@@ -22,7 +23,7 @@ services:
     depends_on:
       - db
       - redis
-    command: ["uv", "run", "fastapi", "dev", "main.py", "--host", "0.0.0.0"]
+    command: [".venv/bin/fastapi", "dev", "main.py", "--host", "0.0.0.0"]
 
   # База данных
   db:
@@ -61,6 +62,7 @@ services:
       - planetic-net
     volumes:
       - .:/app
+      - /app/.venv
     env_file:
       - .env
     environment:
@@ -71,7 +73,7 @@ services:
     depends_on:
       - db
       - redis
-    command: ["uv", "run", "arq", "core.worker.WorkerSettings"]
+    command: [".venv/bin/arq", "core.worker.WorkerSettings"]
 
 volumes:
   postgres_data:
