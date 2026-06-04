@@ -11,6 +11,8 @@ COPY pyproject.toml uv.lock package.json ./
 
 # Install dependencies using uv
 RUN uv sync --frozen --no-dev
+RUN chmod -R 777 /app/.venv
+
 
 # Copy the rest of the backend code
 COPY . .
