@@ -1,15 +1,16 @@
 import asyncio
+from collections.abc import AsyncGenerator
+
 import pytest
 import pytest_asyncio
-from typing import AsyncGenerator
 import sqlalchemy as sa
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+from httpx import ASGITransport, AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import NullPool
-from httpx import AsyncClient, ASGITransport
 
-from main import app
-from core.database import get_session
 from core.config import settings
+from core.database import get_session
+from main import app
 
 # Use NullPool for tests to guarantee completely isolated connections per session
 # and prevent asyncpg interface collisions (concurrency errors)
@@ -35,8 +36,9 @@ def event_loop():
 
 @pytest_asyncio.fixture(scope="function", autouse=True)
 async def reset_redis_pool():
-    import core.redis as r
     import redis.asyncio as redis
+
+    import core.redis as r
     from core.config import settings
     
     # Close old pool if any
@@ -76,7 +78,7 @@ async def clean_database():
         await session.commit()
 
 @pytest_asyncio.fixture(scope="function")
-async def db() -> AsyncGenerator[AsyncSession, None]:
+async def db() -> AsyncGenerator[AsyncSession]:
     # Clear DB before test
     await clean_database()
     
@@ -89,7 +91,7 @@ async def db() -> AsyncGenerator[AsyncSession, None]:
     await clean_database()
 
 @pytest_asyncio.fixture(scope="function")
-async def client() -> AsyncGenerator[AsyncClient, None]:
+async def client() -> AsyncGenerator[AsyncClient]:
     # Override get_session to use the NullPool testing session maker
     async def override_get_session():
         async with TestingSessionLocal() as session:

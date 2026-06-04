@@ -1,9 +1,13 @@
+from datetime import UTC
+
 import pytest
 from sqlalchemy import select
-from modules.users.models import User, Role, Permission
-from modules.auth.models import RefreshToken
+
 from core.redis import get_auth_code, set_setup_token
 from core.security import create_access_token, hash_token
+from modules.auth.models import RefreshToken
+from modules.users.models import Permission, Role, User
+
 
 @pytest.mark.asyncio
 async def test_auth_identify(client, db):
@@ -160,14 +164,15 @@ async def test_auth_refresh(client, db):
     db.add(user)
     await db.commit()
 
+    from datetime import datetime, timedelta
+
     import ulid
-    from datetime import datetime, timedelta, timezone
     
     refresh_token_id = str(ulid.ULID())
     refresh_token_str = "initial-refresh-token-string-hex-32"
     refresh_token_hash = hash_token(refresh_token_str)
     
-    expires_at = datetime.now(timezone.utc) + timedelta(days=7)
+    expires_at = datetime.now(UTC) + timedelta(days=7)
     db_token = RefreshToken(
         id=refresh_token_id,
         token_hash=refresh_token_hash,
@@ -209,8 +214,9 @@ async def test_auth_logout(client, db):
     db.add(user)
     await db.commit()
 
+    from datetime import datetime, timedelta
+
     import ulid
-    from datetime import datetime, timedelta, timezone
     
     refresh_token_id = str(ulid.ULID())
     refresh_token_str = "logout-refresh-token-string"
@@ -220,7 +226,7 @@ async def test_auth_logout(client, db):
         id=refresh_token_id,
         token_hash=refresh_token_hash,
         user_id=user.id,
-        expires_at=datetime.now(timezone.utc) + timedelta(days=7)
+        expires_at=datetime.now(UTC) + timedelta(days=7)
     )
     db.add(db_token)
     await db.commit()
@@ -248,6 +254,7 @@ async def test_auth_logout(client, db):
 @pytest.mark.asyncio
 async def test_auth_logout_webhook_enqueued(client, db, monkeypatch):
     from unittest.mock import AsyncMock
+
     import core.redis as r
     from modules.auth.models import WebhookClient
     
@@ -274,8 +281,9 @@ async def test_auth_logout_webhook_enqueued(client, db, monkeypatch):
     db.add(user)
     await db.commit()
 
+    from datetime import datetime, timedelta
+
     import ulid
-    from datetime import datetime, timedelta, timezone
     
     refresh_token_id = str(ulid.ULID())
     refresh_token_str = "logout-webhook-refresh"
@@ -285,7 +293,7 @@ async def test_auth_logout_webhook_enqueued(client, db, monkeypatch):
         id=refresh_token_id,
         token_hash=refresh_token_hash,
         user_id=user.id,
-        expires_at=datetime.now(timezone.utc) + timedelta(days=7)
+        expires_at=datetime.now(UTC) + timedelta(days=7)
     )
     db.add(db_token)
     await db.commit()
@@ -418,8 +426,8 @@ async def test_approved_user_restriction(client, db):
 
 @pytest.mark.asyncio
 async def test_create_superuser_multiple(db, monkeypatch):
-    from modules.users.init_db import create_superuser_if_not_exists
     from core.config import settings
+    from modules.users.init_db import create_superuser_if_not_exists
 
     # Setup: mock settings.SUPERUSER_EMAIL with multiple comma-separated emails
     monkeypatch.setattr(settings, "SUPERUSER_EMAIL", "admin1@ark.com, admin2@ark.com")

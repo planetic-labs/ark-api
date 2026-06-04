@@ -1,7 +1,10 @@
 import asyncio
+
 from sqlalchemy import select
-from backend.core.database import AsyncSessionLocal
-from backend.modules.users.models import User, Role
+
+from core.database import AsyncSessionLocal
+from modules.users.models import Role, User
+
 
 async def add_user(email: str):
     email = email.strip().lower()

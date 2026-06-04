@@ -1,7 +1,9 @@
 from datetime import datetime
+
 import sqlalchemy as sa
-from sqlalchemy import Table, Column, String, Boolean, DateTime, ForeignKey, ARRAY
+from sqlalchemy import ARRAY, Boolean, Column, DateTime, ForeignKey, String, Table
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+
 from core.models import Base, pk_ulid
 
 # Association table for User <-> Role (Many-to-Many)
@@ -51,7 +53,7 @@ class Role(Base):
         secondary=role_permissions,
         lazy="selectin"
     )
-    users: Mapped[list["User"]] = relationship(
+    users: Mapped[list[User]] = relationship(
         secondary=user_roles,
         back_populates="roles"
     )
@@ -132,7 +134,7 @@ class User(Base):
     )
 
     from modules.messaging.models import chat_members
-    chats: Mapped[list["Chat"]] = relationship(
+    chats: Mapped[list[Chat]] = relationship(
         secondary=chat_members,
         back_populates="members"
     )

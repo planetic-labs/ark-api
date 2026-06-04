@@ -1,6 +1,8 @@
 from fastapi import FastAPI
+
 from core.config import settings
 from main import app
+
 
 def test_docs_urls_when_debug_matches_app_state():
     if settings.DEBUG:

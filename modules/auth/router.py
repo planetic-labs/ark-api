@@ -1,15 +1,19 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from core.database import get_session
+from core.security import decode_token
 from modules.auth.schemas import (
-    IdentifySchema, IdentifyResponseSchema,
-    VerifyCodeSchema, VerifyCodeResponseSchema,
-    SetupProfileSchema, TokenResponseSchema,
-    RefreshTokenSchema, MsgSchema
+    IdentifyResponseSchema,
+    IdentifySchema,
+    MsgSchema,
+    RefreshTokenSchema,
+    SetupProfileSchema,
+    TokenResponseSchema,
+    VerifyCodeResponseSchema,
+    VerifyCodeSchema,
 )
 from modules.auth.service import AuthService
-from modules.users.dependencies import oauth2_scheme
-from core.security import decode_token
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -65,7 +69,7 @@ async def refresh_token(
 
 from fastapi.security import OAuth2PasswordBearer
 
-oauth2_scheme_optional = OAuth2PasswordBearer(tokenUrl=f"/api/v1/auth/verify-code", auto_error=False)
+oauth2_scheme_optional = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/verify-code", auto_error=False)
 
 @router.post("/logout", response_model=MsgSchema)
 async def logout(

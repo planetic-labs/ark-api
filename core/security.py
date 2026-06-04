@@ -1,11 +1,13 @@
-import jwt
 import base64
 import hashlib
-from datetime import datetime, timedelta, timezone
-from typing import Any
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from cryptography.hazmat.primitives.asymmetric import rsa
+from typing import Any
+
+import jwt
 from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
+
 from core.config import settings
 
 ALGORITHM = "RS256"
@@ -66,9 +68,9 @@ def create_access_token(
     expires_delta: timedelta | None = None
 ) -> str:
     if expires_delta:
-        expire = datetime.now(timezone.utc) + expires_delta
+        expire = datetime.now(UTC) + expires_delta
     else:
-        expire = datetime.now(timezone.utc) + timedelta(
+        expire = datetime.now(UTC) + timedelta(
             seconds=settings.JWT_ACCESS_TTL
         )
     

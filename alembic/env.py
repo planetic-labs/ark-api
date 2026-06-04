@@ -9,10 +9,8 @@ from alembic import context
 # Import settings and models
 from core.config import settings
 from core.models import Base
+
 # Import all models to ensure they are registered with Base.metadata
-from modules.users.models import User
-from modules.auth.models import RefreshToken, WebhookClient
-from modules.messaging.models import Chat, Message
 
 # this is the Alembic Config object
 config = context.config
