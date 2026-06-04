@@ -603,3 +603,35 @@ async def test_auth_refresh_grace_period_race_condition(client, db):
         "refresh_token": refresh_token_str
     })
     assert response3.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_create_chat_success(client, db):
+    role = Role(name="student", is_default=True)
+    db.add(role)
+    user_a = User(email="usera@ark.com", status="active", is_active=True, is_approved=True)
+    user_b = User(email="userb@ark.com", status="active", is_active=True, is_approved=True)
+    user_a.roles.append(role)
+    user_b.roles.append(role)
+    db.add(user_a)
+    db.add(user_b)
+    await db.commit()
+    await db.refresh(user_a)
+    await db.refresh(user_b)
+
+    token_a = create_access_token(subject=user_a.id, roles=["student"], status="active")
+
+    # Send POST using member_ids
+    response = await client.post(
+        "/api/v1/messaging/chats",
+        json={
+            "name": "Test Group Chat",
+            "is_group": True,
+            "member_ids": [user_b.id]
+        },
+        headers={"Authorization": f"Bearer {token_a}"}
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["name"] == "Test Group Chat"
+    assert data["is_group"] is True
