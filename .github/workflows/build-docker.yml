@@ -19,9 +19,9 @@ jobs:
       matrix:
         include:
           - image-name: ark-api
-            file: infra/docker/api.Dockerfile
+            file: infra/api.Dockerfile
           - image-name: ark-db
-            file: infra/docker/postgres.Dockerfile
+            file: infra/postgres.Dockerfile
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6

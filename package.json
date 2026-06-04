@@ -3,7 +3,7 @@
   "version": "2026.5.23",
   "private": true,
   "scripts": {
-    "dev": "docker compose -f infra/docker-compose.yml up api",
+    "dev": "docker compose up api",
     "lint": "uv run ruff check .",
     "test": "uv run pytest"
   }
