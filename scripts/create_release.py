@@ -72,15 +72,64 @@ def calculate_next_version(date_str: str, tags: list[str]) -> str:
     return f"v{date_str}.patch{next_patch}"
 
 
-def create_tag(version: str, dry_run: bool) -> None:
-    """Creates a local git tag."""
-    msg = f"Release {version}"
+def group_commits(commits: list[str]) -> str:
+    """Groups commit messages by standard conventional commit prefixes."""
+    categories: dict[str, list[str]] = {
+        "Features": [],
+        "Bug Fixes": [],
+        "Refactoring & Performance": [],
+        "Other Changes": []
+    }
+    for c in commits:
+        c = c.strip()
+        if not c:
+            continue
+        if c.startswith("feat"):
+            categories["Features"].append(c)
+        elif c.startswith("fix"):
+            categories["Bug Fixes"].append(c)
+        elif c.startswith(("refactor", "perf")):
+            categories["Refactoring & Performance"].append(c)
+        else:
+            categories["Other Changes"].append(c)
+
+    res: list[str] = []
+    for cat, items in categories.items():
+        if items:
+            res.append(f"\n### {cat}")
+            res.extend(f"* {item}" for item in items)
+    return "\n".join(res).strip()
+
+
+def get_changelog() -> str:
+    """Generates a grouped changelog from the latest tag to HEAD."""
+    try:
+        latest_tag: str = run_git_command(["describe", "--tags", "--abbrev=0"])
+        log_range: str = f"{latest_tag}..HEAD"
+    except Exception:
+        log_range = "HEAD"
+
+    try:
+        commits: list[str] = run_git_command(["log", log_range, "--pretty=format:%s"]).splitlines()
+    except Exception:
+        commits = []
+
+    if not commits:
+        return "No changes."
+    return group_commits(commits)
+
+
+def create_tag(version: str, changelog: str, dry_run: bool) -> None:
+    """Creates a local git tag with changelog message."""
+    msg: str = f"Release {version}\n\n{changelog}"
     print(f"Creating local git tag: {version}")
     if dry_run:
         print(f"[DRY-RUN] git tag -a {version} -m '{msg}'")
     else:
         run_git_command(["tag", "-a", version, "-m", msg])
         print(f"Successfully created tag {version} locally.")
+        print(f"Changelog included in tag:\n{changelog}\n")
+
 
 
 def push_tag(version: str, dry_run: bool) -> None:
@@ -117,7 +166,8 @@ def main():
     print(f"Current Date: {date_str}")
     print(f"Next release version: {next_version}")
     
-    create_tag(next_version, args.dry_run)
+    changelog = get_changelog()
+    create_tag(next_version, changelog, args.dry_run)
     
     if args.dry_run:
         return
