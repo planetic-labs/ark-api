@@ -77,16 +77,16 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "alembic", specifier = ">=1.13.1" },
-    { name = "arq", specifier = ">=0.25.0" },
-    { name = "asyncpg", specifier = ">=0.29.0" },
-    { name = "fastapi", extras = ["standard"], specifier = ">=0.111.0" },
+    { name = "arq", specifier = ">=0.28.0" },
+    { name = "asyncpg", specifier = ">=0.31.0" },
+    { name = "fastapi", extras = ["standard"], specifier = ">=0.136.3" },
     { name = "pydantic", extras = ["email"], specifier = ">=2.7.1" },
     { name = "pydantic-settings", specifier = ">=2.14.1" },
     { name = "pyjwt", extras = ["crypto"], specifier = ">=2.8.0" },
     { name = "python-multipart", specifier = ">=0.0.30" },
     { name = "python-ulid", specifier = ">=3.1.0" },
     { name = "redis", specifier = ">=5.0.4" },
-    { name = "resend", specifier = ">=0.8.0" },
+    { name = "resend", specifier = ">=2.30.1" },
     { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=2.0.50" },
     { name = "structlog", specifier = ">=24.1.0" },
 ]
