@@ -20,10 +20,11 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - UV_CACHE_DIR=/tmp/uv-cache
       - UV_LINK_MODE=copy
+      - UV_NO_SYNC=1
     depends_on:
       - db
       - redis
-    command: [".venv/bin/fastapi", "dev", "main.py", "--host", "0.0.0.0"]
+    command: ["uv", "run", "fastapi", "dev", "main.py", "--host", "0.0.0.0"]
 
   # База данных
   db:
@@ -70,10 +71,11 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - UV_CACHE_DIR=/tmp/uv-cache
       - UV_LINK_MODE=copy
+      - UV_NO_SYNC=1
     depends_on:
       - db
       - redis
-    command: [".venv/bin/arq", "core.worker.WorkerSettings"]
+    command: ["uv", "run", "arq", "core.worker.WorkerSettings"]
 
 volumes:
   postgres_data:
