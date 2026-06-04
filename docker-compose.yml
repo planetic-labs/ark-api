@@ -2,8 +2,8 @@ services:
   # Бэкенд (FastAPI)
   api:
     build:
-      context: ..
-      dockerfile: infra/docker/api.Dockerfile
+      context: .
+      dockerfile: infra/api.Dockerfile
     user: "${CURRENT_UID:-1000}:${CURRENT_GID:-1000}"
     networks:
       - planetic-net
@@ -11,9 +11,9 @@ services:
       - "127.0.0.1:8000:8000"
     volumes:
       # Прокидываем код бэкенда для авторелоада (Hot Reload)
-      - ..:/app
+      - .:/app
     env_file:
-      - ../.env
+      - .env
     environment:
       - DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/ark
       - REDIS_URL=redis://redis:6379/0
@@ -27,8 +27,8 @@ services:
   # База данных
   db:
     build:
-      context: ..
-      dockerfile: infra/docker/postgres.Dockerfile
+      context: .
+      dockerfile: infra/postgres.Dockerfile
     command: ["postgres", "-c", "shared_preload_libraries=pg_partman_bgw", "-c", "pg_partman_bgw.dbname=ark", "-c", "pg_partman_bgw.role=postgres"]
     environment:
       - POSTGRES_USER=postgres
@@ -54,15 +54,15 @@ services:
   # Воркер фоновых задач ARQ
   worker:
     build:
-      context: ..
-      dockerfile: infra/docker/api.Dockerfile
+      context: .
+      dockerfile: infra/api.Dockerfile
     user: "${CURRENT_UID:-1000}:${CURRENT_GID:-1000}"
     networks:
       - planetic-net
     volumes:
-      - ..:/app
+      - .:/app
     env_file:
-      - ../.env
+      - .env
     environment:
       - DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/ark
       - REDIS_URL=redis://redis:6379/0
