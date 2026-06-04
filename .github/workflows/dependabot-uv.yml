@@ -3,7 +3,7 @@ name: Dependabot uv lock update
 on:
   pull_request:
     paths:
-      - 'backend/pyproject.toml'
+      - 'pyproject.toml'
 
 permissions:
   contents: read
@@ -19,15 +19,15 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Install uv
-        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+        uses: astral-sh/setup-uv@v5
 
       - name: Update uv lockfile
         run: |
-          uv lock --project backend
+          uv lock
 
       - name: Report lockfile update result
         run: |
-          if git diff --quiet -- backend/uv.lock; then
+          if git diff --quiet -- uv.lock; then
             echo "No changes to uv.lock"
           else
             echo "uv.lock was updated. Commit/push must be handled by a separate trusted workflow."
