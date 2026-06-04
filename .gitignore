@@ -1,6 +1,8 @@
 # Core mandates and project docs
 GEMINI.md
 docs/requirements.pdf
+info/
+
 
 # Dependencies
 node_modules/
