@@ -541,3 +541,65 @@ async def test_messaging_chat_messages_bola(client, db):
     assert response.status_code == 200
     assert len(response.json()) == 1
     assert response.json()[0]["content"] == "Secret message"
+
+
+@pytest.mark.asyncio
+async def test_auth_refresh_grace_period_race_condition(client, db):
+    from core.redis import get_redis_client
+    # Setup: Create active user and seed RefreshToken
+    role = Role(name="student", is_default=True)
+    db.add(role)
+    user = User(
+        email="refresh_race@ark.com",
+        status="active",
+        is_active=True
+    )
+    user.roles.append(role)
+    db.add(user)
+    await db.commit()
+
+    from datetime import datetime, timedelta
+    import ulid
+
+    refresh_token_id = str(ulid.ULID())
+    refresh_token_str = "race-refresh-token-string"
+    refresh_token_hash = hash_token(refresh_token_str)
+
+    expires_at = datetime.now(UTC) + timedelta(days=7)
+    db_token = RefreshToken(
+        id=refresh_token_id,
+        token_hash=refresh_token_hash,
+        user_id=user.id,
+        expires_at=expires_at
+    )
+    db.add(db_token)
+    await db.commit()
+
+    # First refresh call (simulating request 1)
+    response1 = await client.post("/api/v1/auth/refresh", json={
+        "refresh_token": refresh_token_str
+    })
+    assert response1.status_code == 200
+    data1 = response1.json()
+    assert data1["access_token"] is not None
+    assert data1["refresh_token"] is not None
+
+    # Second refresh call (simulating request 2 in parallel/grace period)
+    response2 = await client.post("/api/v1/auth/refresh", json={
+        "refresh_token": refresh_token_str
+    })
+    assert response2.status_code == 200
+    data2 = response2.json()
+    # It must return the exact same token pair
+    assert data2["access_token"] == data1["access_token"]
+    assert data2["refresh_token"] == data1["refresh_token"]
+
+    # Clear the Redis rotation cache for this token to simulate grace period expiration
+    async with get_redis_client() as redis:
+        await redis.delete(f"auth:rotation:{refresh_token_hash}")
+
+    # Third refresh call (after grace period expired) -> should fail
+    response3 = await client.post("/api/v1/auth/refresh", json={
+        "refresh_token": refresh_token_str
+    })
+    assert response3.status_code == 401

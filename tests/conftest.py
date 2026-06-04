@@ -77,6 +77,14 @@ async def clean_database():
                 print(f"Error truncating {table}: {e}")
         await session.commit()
 
+    # Clear Redis to prevent cross-test side effects
+    try:
+        from core.redis import get_redis_client
+        async with get_redis_client() as redis:
+            await redis.flushdb()
+    except Exception as e:
+        print(f"Error flushing Redis: {e}")
+
 @pytest_asyncio.fixture(scope="function")
 async def db() -> AsyncGenerator[AsyncSession]:
     # Clear DB before test

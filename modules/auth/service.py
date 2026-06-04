@@ -12,6 +12,7 @@ from core.redis import (
     get_setup_token,
     set_auth_code,
     set_setup_token,
+    get_redis_client,
 )
 from core.security import create_access_token, create_refresh_token, hash_token
 from modules.auth.models import RefreshToken
@@ -206,6 +207,17 @@ class AuthService:
     async def refresh_token(self, refresh_token_str: str) -> dict | None:
         token_hash = hash_token(refresh_token_str)
         
+        # Check Redis for a recent rotation of this token to avoid race conditions
+        redis_key = f"auth:rotation:{token_hash}"
+        async with get_redis_client() as redis:
+            cached_data = await redis.get(redis_key)
+            if cached_data:
+                import json
+                try:
+                    return json.loads(cached_data)
+                except Exception:
+                    pass
+
         result = await self.session.execute(
             select(RefreshToken).where(
                 RefreshToken.token_hash == token_hash,
@@ -251,11 +263,19 @@ class AuthService:
         )
         
         await self.session.commit()
-        return {
+        
+        response_data = {
             "access_token": new_access_token,
             "refresh_token": new_refresh_token_str,
             "expires_in": settings.JWT_ACCESS_TTL
         }
+        
+        # Cache rotation result in Redis for 60 seconds to support parallel requests
+        async with get_redis_client() as redis:
+            import json
+            await redis.set(redis_key, json.dumps(response_data), ex=60)
+            
+        return response_data
 
     async def logout(self, jti: str | None = None, refresh_token_str: str | None = None) -> bool:
         db_token = None
