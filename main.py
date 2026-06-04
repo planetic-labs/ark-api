@@ -1,19 +1,20 @@
-from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
-from fastapi.responses import JSONResponse
-from fastapi.middleware.cors import CORSMiddleware
-import structlog
 import asyncio
+
 import jwt
+import structlog
+from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 # Setup logging
 logger = structlog.get_logger()
 
 from core.config import settings
-from modules.auth.router import router as auth_router
-from modules.users.router import router as users_router
-from modules.messaging.router import router as messaging_router
 from core.websocket import manager, redis_broadcast_reader
+from modules.auth.router import router as auth_router
+from modules.messaging.router import router as messaging_router
 from modules.users.init_db import create_superuser_if_not_exists
+from modules.users.router import router as users_router
 
 app = FastAPI(
     title="Ark Messenger API",

@@ -1,12 +1,26 @@
+import sqlalchemy as sa
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
-import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from core.database import get_session
-from modules.users.dependencies import get_current_user, require_role, require_approved_user
-from modules.users.models import User, Role
-from modules.users.schemas import UserSchema, UserCreateSchema, UserAdminUpdateSchema, RoleSchema, RoleCreateSchema, PermissionSchema, ServiceClientSchema, ServiceClientCreateSchema, ServiceClientCreateResponseSchema
-from modules.users.models import User, Role, Permission, ServiceClient
+from modules.users.dependencies import (
+    get_current_user,
+    require_approved_user,
+    require_role,
+)
+from modules.users.models import Permission, Role, ServiceClient, User
+from modules.users.schemas import (
+    PermissionSchema,
+    RoleCreateSchema,
+    RoleSchema,
+    ServiceClientCreateResponseSchema,
+    ServiceClientCreateSchema,
+    ServiceClientSchema,
+    UserAdminUpdateSchema,
+    UserCreateSchema,
+    UserSchema,
+)
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -306,8 +320,9 @@ async def list_permissions(
     return permissions
 
 
-import secrets
 import hashlib
+import secrets
+
 
 @router.get("/services/list", response_model=list[ServiceClientSchema])
 async def list_services(

@@ -1,6 +1,9 @@
-from pydantic import BaseModel, ConfigDict
 from datetime import datetime
+
+from pydantic import BaseModel, ConfigDict
+
 from modules.users.schemas import UserSchema
+
 
 class ChatBaseSchema(BaseModel):
     name: str | None = None

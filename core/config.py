@@ -1,6 +1,6 @@
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import field_validator
-from typing import Any
+
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "Ark Messenger"

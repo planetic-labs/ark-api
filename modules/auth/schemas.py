@@ -1,5 +1,6 @@
 from pydantic import BaseModel, EmailStr, Field
 
+
 class IdentifySchema(BaseModel):
     email: EmailStr
 

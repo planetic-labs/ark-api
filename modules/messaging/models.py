@@ -1,6 +1,8 @@
 from datetime import datetime
-from sqlalchemy import String, ForeignKey, Table, Column, DateTime, func
-from sqlalchemy.orm import Mapped, mapped_column, relationship, foreign, remote
+
+from sqlalchemy import Column, DateTime, ForeignKey, String, Table, func
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
 from core.models import Base, pk_ulid
 
 # Association table for group chat members
@@ -20,11 +22,11 @@ class Chat(Base):
     is_group: Mapped[bool] = mapped_column(default=False)
     
     # Relationships
-    members: Mapped[list["User"]] = relationship(
+    members: Mapped[list[User]] = relationship(
         secondary=chat_members,
         back_populates="chats"
     )
-    messages: Mapped[list["Message"]] = relationship(
+    messages: Mapped[list[Message]] = relationship(
         back_populates="chat",
         cascade="all, delete-orphan"
     )
@@ -46,12 +48,12 @@ class Message(Base):
     parent_id: Mapped[str | None] = mapped_column(ForeignKey("messages.id", ondelete="CASCADE"))
 
     # Relationships
-    chat: Mapped["Chat"] = relationship(back_populates="messages")
-    sender: Mapped["User"] = relationship()
-    replies: Mapped[list["Message"]] = relationship(
+    chat: Mapped[Chat] = relationship(back_populates="messages")
+    sender: Mapped[User] = relationship()
+    replies: Mapped[list[Message]] = relationship(
         back_populates="parent",
     )
-    parent: Mapped["Message | None"] = relationship(
+    parent: Mapped[Message | None] = relationship(
         back_populates="replies",
         remote_side="Message.id" # Use string to avoid built-in id() conflict
     )

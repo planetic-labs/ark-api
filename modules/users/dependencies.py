@@ -1,17 +1,17 @@
+import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-import jwt
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.config import settings
 from core.database import get_session
 from core.security import decode_token
 from modules.users.models import User
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"/api/v1/auth/verify-code")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/verify-code")
 
 import structlog
+
 logger = structlog.get_logger()
 
 async def get_current_user(

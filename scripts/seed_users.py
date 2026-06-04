@@ -1,8 +1,10 @@
 import asyncio
-from sqlalchemy.ext.asyncio import AsyncSession
+
 from sqlalchemy import select
-from backend.core.database import AsyncSessionLocal
-from backend.modules.users.models import User, Role
+
+from core.database import AsyncSessionLocal
+from modules.users.models import Role, User
+
 
 async def seed_users():
     async with AsyncSessionLocal() as session:

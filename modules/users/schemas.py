@@ -1,6 +1,8 @@
-from pydantic import BaseModel, EmailStr, ConfigDict, field_validator
-from typing import Any
 from datetime import datetime
+from typing import Any
+
+from pydantic import BaseModel, ConfigDict, EmailStr, field_validator
+
 
 class UserBaseSchema(BaseModel):
     email: EmailStr

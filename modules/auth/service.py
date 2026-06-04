@@ -1,15 +1,22 @@
 import secrets
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from core.config import settings
 from core.redis import (
-    set_auth_code, get_auth_code, delete_auth_code,
-    set_setup_token, get_setup_token, delete_setup_token
+    delete_auth_code,
+    delete_setup_token,
+    get_auth_code,
+    get_setup_token,
+    set_auth_code,
+    set_setup_token,
 )
 from core.security import create_access_token, create_refresh_token, hash_token
-from core.config import settings
-from modules.users.models import User, Role
 from modules.auth.models import RefreshToken
+from modules.users.models import Role, User
+
 
 class AuthService:
     def __init__(self, session: AsyncSession):
@@ -117,7 +124,7 @@ class AuthService:
             refresh_token_str = create_refresh_token()
             refresh_token_hash = hash_token(refresh_token_str)
             
-            expires_at = datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+            expires_at = datetime.now(UTC) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
             db_refresh_token = RefreshToken(
                 id=refresh_token_id,
                 token_hash=refresh_token_hash,
@@ -172,7 +179,7 @@ class AuthService:
         refresh_token_str = create_refresh_token()
         refresh_token_hash = hash_token(refresh_token_str)
         
-        expires_at = datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+        expires_at = datetime.now(UTC) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
         db_refresh_token = RefreshToken(
             id=refresh_token_id,
             token_hash=refresh_token_hash,
@@ -202,7 +209,7 @@ class AuthService:
         result = await self.session.execute(
             select(RefreshToken).where(
                 RefreshToken.token_hash == token_hash,
-                RefreshToken.expires_at > datetime.now(timezone.utc)
+                RefreshToken.expires_at > datetime.now(UTC)
             )
         )
         db_token = result.scalar_one_or_none()
@@ -226,7 +233,7 @@ class AuthService:
         new_refresh_token_str = create_refresh_token()
         new_refresh_token_hash = hash_token(new_refresh_token_str)
         
-        expires_at = datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+        expires_at = datetime.now(UTC) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
         new_db_token = RefreshToken(
             id=new_refresh_token_id,
             token_hash=new_refresh_token_hash,
