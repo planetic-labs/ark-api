@@ -142,6 +142,21 @@ def push_tag(version: str, dry_run: bool) -> None:
         print(f"Successfully pushed tag {version} to origin.")
 
 
+def create_github_release(version: str, changelog: str, dry_run: bool) -> None:
+    """Creates a GitHub release using the gh CLI tool."""
+    print(f"Creating GitHub release for tag {version}...")
+    cmd = ["gh", "release", "create", version, "--title", f"Release {version}", "--notes", changelog]
+    if dry_run:
+        print(f"[DRY-RUN] {' '.join(cmd)}")
+    else:
+        try:
+            subprocess.run(cmd, capture_output=True, text=True, check=True)
+            print(f"Successfully created GitHub release {version}.")
+        except subprocess.CalledProcessError as e:
+            print(f"Error creating GitHub release: {e.stderr}", file=sys.stderr)
+            raise
+
+
 def parse_arguments() -> argparse.Namespace:
     """Parses command line arguments."""
     parser = argparse.ArgumentParser(description="Create a calendar versioned (CalVer) release.")
@@ -170,15 +185,18 @@ def main():
     create_tag(next_version, changelog, args.dry_run)
     
     if args.dry_run:
+        create_github_release(next_version, changelog, args.dry_run)
         return
         
     if args.push:
         push_tag(next_version, args.dry_run)
+        create_github_release(next_version, changelog, args.dry_run)
     elif not args.no_input:
         try:
-            user_input = input(f"Do you want to push tag '{next_version}' to origin? [y/N]: ").strip().lower()
+            user_input = input(f"Do you want to push tag '{next_version}' and create GitHub release? [y/N]: ").strip().lower()
             if user_input in ("y", "yes"):
                 push_tag(next_version, args.dry_run)
+                create_github_release(next_version, changelog, args.dry_run)
             else:
                 print(f"Tag was not pushed. You can push it manually: git push origin {next_version}")
         except KeyboardInterrupt:
