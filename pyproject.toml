@@ -15,7 +15,7 @@ dependencies = [
     "python-multipart>=0.0.30",
     "alembic>=1.13.1",
     "pydantic-settings>=2.14.1",
-    "pyjwt[crypto]>=2.8.0",
+    "pyjwt[crypto]>=2.13.0",
     "resend>=2.30.1",
 ]
 
