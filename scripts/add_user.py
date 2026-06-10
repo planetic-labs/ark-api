@@ -3,6 +3,7 @@ import asyncio
 from sqlalchemy import select
 
 from core.database import AsyncSessionLocal
+from modules.notifications.models import DeviceToken  # noqa: F401
 from modules.users.models import Role, User
 
 
@@ -17,7 +18,7 @@ async def add_user(email: str):
             return
 
         # Find student (default) role
-        result = await session.execute(select(Role).where(Role.is_default == True))
+        result = await session.execute(select(Role).where(Role.is_default.is_(True)))
         role = result.scalar_one_or_none()
         if not role:
             result = await session.execute(select(Role).where(Role.name == "student"))

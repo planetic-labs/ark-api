@@ -3,6 +3,7 @@ import asyncio
 from sqlalchemy import select
 
 from core.database import AsyncSessionLocal
+from modules.notifications.models import DeviceToken  # noqa: F401
 from modules.users.models import Role, User
 
 
