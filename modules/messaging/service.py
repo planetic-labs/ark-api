@@ -89,7 +89,7 @@ class MessagingService:
     async def _broadcast_message(
         self, message: Message, chat_id: str, session: AsyncSession
     ):
-        """Internal helper to publish message to Redis"""
+        """Publish message to Redis and enqueue pushes for offline users"""
         try:
             from core.redis import get_redis_client
 
@@ -99,18 +99,60 @@ class MessagingService:
             )
             target_user_ids = [str(r[0]) for r in members_result.all()]
 
-            redis = get_redis_client()
-            event = {
-                "type": "message.new",
-                "target_user_ids": target_user_ids,
-                "payload": {
+            async with get_redis_client() as client:
+                event = {
                     "type": "message.new",
-                    "data": json.loads(
-                        MessageSchema.model_validate(message).model_dump_json()
-                    ),
-                },
-            }
-            await redis.publish("chat_events", json.dumps(event))
+                    "target_user_ids": target_user_ids,
+                    "payload": {
+                        "type": "message.new",
+                        "data": json.loads(
+                            MessageSchema.model_validate(message).model_dump_json()
+                        ),
+                    },
+                }
+                await client.publish("chat_events", json.dumps(event))
+
+                # 1. Determine offline target users (exclude sender)
+                offline_user_ids = []
+                sender_id_str = str(message.sender_id) if message.sender_id else None
+                for uid in target_user_ids:
+                    if uid == sender_id_str:
+                        continue
+                    is_online = await client.exists(f"user:online:{uid}")
+                    if not is_online:
+                        offline_user_ids.append(uid)
+
+            if offline_user_ids:
+                # 2. Determine channel and sound
+                sound = "default"
+                channel_id = "default"
+
+                content_lower = (message.content or "").lower()
+                is_satsang_trigger = any(
+                    word in content_lower
+                    for word in ["встреча", "сатсанг", "satsang", "начало встречи"]
+                )
+
+                sender_role = message.sender.role if message.sender else None
+
+                if is_satsang_trigger:
+                    sound = "siren_satsang.wav"
+                    channel_id = "siren_satsang"
+                elif sender_role == "WARRIOR":
+                    sound = "siren_warrior.wav"
+                    channel_id = "siren_warrior"
+
+                # 3. Enqueue the task
+                from core.redis import enqueue_push_notification
+
+                await enqueue_push_notification(
+                    user_ids=offline_user_ids,
+                    title=message.sender.full_name or "Новое сообщение",
+                    body=message.content or "Вам отправлено сообщение",
+                    sound=sound,
+                    channel_id=channel_id,
+                    data={"chat_id": chat_id, "message_id": message.id},
+                )
         except Exception as e:
             print(f"Failed to broadcast: {e}")
 

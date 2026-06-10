@@ -20,7 +20,7 @@ async def send_webhook_revocation(
     webhook_secret: str,
 ) -> None:
     """
-    Отправляет Webhook на сторонний сервис при отзыве сессии или блокировке пользователя.
+    Отправляет Webhook при отзыве сессии или блокировке пользователя.
     """
     if not webhook_url:
         logger.warning("Webhook URL is empty, skipping task")
@@ -83,12 +83,46 @@ async def shutdown(ctx: dict[str, Any]) -> None:
     logger.info("ARQ worker stopped")
 
 
+async def send_push_notification_task(
+    ctx: dict[str, Any],
+    user_ids: list[str],
+    title: str,
+    body: str,
+    sound: str | None = "default",
+    channel_id: str | None = None,
+    data: dict[str, str] | None = None,
+) -> None:
+    """
+    Фоновая задача ARQ для асинхронной отправки push-уведомлений через Expo Push API.
+    """
+    from core.database import AsyncSessionLocal
+    from modules.notifications.service import send_push_notifications
+
+    logger.info("ARQ task: sending push notifications", user_ids=user_ids, title=title)
+    try:
+        async with AsyncSessionLocal() as session:
+            await send_push_notifications(
+                session=session,
+                user_ids=user_ids,
+                title=title,
+                body=body,
+                sound=sound,
+                channel_id=channel_id,
+                data=data,
+            )
+    except Exception as e:
+        logger.error(
+            "Failed to send push notifications in background task", error=str(e)
+        )
+        raise e
+
+
 class WorkerSettings:
     """
     Конфигурация воркера для запуска через arq CLI.
     """
 
-    functions = [send_webhook_revocation]
+    functions = [send_webhook_revocation, send_push_notification_task]
     redis_settings = RedisSettings.from_dsn(settings.REDIS_URL)
     on_startup = startup
     on_shutdown = shutdown

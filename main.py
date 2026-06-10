@@ -2,12 +2,9 @@ import asyncio
 
 import jwt
 import structlog
-from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, Request, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-
-# Setup logging
-logger = structlog.get_logger()
 
 from core.config import settings
 from core.websocket import manager, redis_broadcast_reader
@@ -15,6 +12,9 @@ from modules.auth.router import router as auth_router
 from modules.messaging.router import router as messaging_router
 from modules.users.init_db import create_superuser_if_not_exists
 from modules.users.router import router as users_router
+
+# Setup logging
+logger = structlog.get_logger()
 
 app = FastAPI(
     title="Ark Messenger API",
@@ -61,12 +61,43 @@ async def websocket_endpoint(
         return
 
     await manager.connect(user_id, websocket)
+
+    from core.redis import get_redis_client
+
+    async def keep_online():
+        try:
+            async with get_redis_client() as client:
+                key = f"user:online:{user_id}"
+                while True:
+                    await client.set(key, "1", ex=30)
+                    await asyncio.sleep(20)
+        except asyncio.CancelledError:
+            try:
+                async with get_redis_client() as client:
+                    await client.delete(f"user:online:{user_id}")
+            except Exception:
+                pass
+        except Exception as e:
+            logger.error(
+                "Error keeping user online status", error=str(e), user_id=user_id
+            )
+
+    online_task = asyncio.create_task(keep_online())
+
     try:
         while True:
             # Just keep connection alive
             await websocket.receive_text()
-    except WebSocketDisconnect:
+    except Exception:
+        pass
+    finally:
+        online_task.cancel()
         manager.disconnect(user_id, websocket)
+        try:
+            async with get_redis_client() as client:
+                await client.delete(f"user:online:{user_id}")
+        except Exception:
+            pass
 
 
 @app.exception_handler(Exception)

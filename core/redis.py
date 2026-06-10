@@ -71,3 +71,23 @@ async def enqueue_revocation_webhook(
         webhook_url=webhook_url,
         webhook_secret=webhook_secret,
     )
+
+
+async def enqueue_push_notification(
+    user_ids: list[str],
+    title: str,
+    body: str,
+    sound: str | None = "default",
+    channel_id: str | None = None,
+    data: dict[str, str] | None = None,
+) -> None:
+    pool = await get_arq_pool()
+    await pool.enqueue_job(
+        "send_push_notification_task",
+        user_ids=user_ids,
+        title=title,
+        body=body,
+        sound=sound,
+        channel_id=channel_id,
+        data=data,
+    )
