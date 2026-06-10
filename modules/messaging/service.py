@@ -25,7 +25,7 @@ class MessagingService:
                 .join(chat_members)
                 .where(
                     and_(
-                        Chat.is_group == False,
+                        Chat.is_group.is_(False),
                         chat_members.c.user_id.in_([creator_id, other_id]),
                     )
                 )
@@ -53,6 +53,31 @@ class MessagingService:
         return chat
 
     async def get_user_chats(self, user_id: str) -> list[Chat]:
+        # 1. Fetch all group chats
+        group_chats_result = await self.session.execute(
+            select(Chat).where(Chat.is_group.is_(True))
+        )
+        group_chats = group_chats_result.scalars().all()
+
+        # 2. Fetch chats the user is already a member of
+        member_chats_result = await self.session.execute(
+            select(chat_members.c.chat_id).where(chat_members.c.user_id == user_id)
+        )
+        member_chat_ids = {r[0] for r in member_chats_result.all()}
+
+        # 3. Add user to any missing group chats
+        added_any = False
+        for gc in group_chats:
+            if gc.id not in member_chat_ids:
+                await self.session.execute(
+                    chat_members.insert().values(chat_id=gc.id, user_id=user_id)
+                )
+                added_any = True
+
+        if added_any:
+            await self.session.commit()
+
+        # 4. Return all chats the user is now a member of
         result = await self.session.execute(
             select(Chat)
             .join(chat_members)
@@ -142,7 +167,10 @@ class MessagingService:
             for other in others:
                 bot_msg = None
                 if other.email == "tron@system.com":
-                    bot_msg = "Greeting program. System is operational. How can I assist you on the Grid?"
+                    bot_msg = (
+                        "Greeting program. System is operational. "
+                        "How can I assist you on the Grid?"
+                    )
 
                 if bot_msg:
                     new_msg = Message(
@@ -176,4 +204,6 @@ class MessagingService:
             .order_by(Message.created_at.desc())
             .limit(limit)
         )
-        return list(result.scalars().all())
+        messages = list(result.scalars().all())
+        messages.reverse()
+        return messages
