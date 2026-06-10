@@ -1,9 +1,14 @@
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Column, DateTime, ForeignKey, String, Table, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from core.models import Base, pk_ulid
+
+if TYPE_CHECKING:
+    from modules.users.models import User
+
 
 # Association table for group chat members
 chat_members = Table(
@@ -52,19 +57,22 @@ class Message(Base):
     sender_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
     chat_id: Mapped[str] = mapped_column(ForeignKey("chats.id", ondelete="CASCADE"))
 
-    # For threads (logical key, no physical FK constraint in DB migrations because of table partitioning)
-    parent_id: Mapped[str | None] = mapped_column(
-        ForeignKey("messages.id", ondelete="CASCADE")
-    )
+    # For threads (logical key, no physical FK constraint in DB migrations
+    # because of table partitioning)
+    parent_id: Mapped[str | None] = mapped_column(String(26), nullable=True)
 
     # Relationships
     chat: Mapped[Chat] = relationship(back_populates="messages")
     sender: Mapped[User] = relationship()
     replies: Mapped[list[Message]] = relationship(
+        "Message",
         back_populates="parent",
+        primaryjoin="foreign(Message.parent_id) == Message.id",
     )
     parent: Mapped[Message | None] = relationship(
+        "Message",
         back_populates="replies",
+        primaryjoin="foreign(Message.parent_id) == Message.id",
         remote_side="Message.id",  # Use string to avoid built-in id() conflict
     )
 

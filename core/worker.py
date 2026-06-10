@@ -69,6 +69,12 @@ async def startup(ctx: dict[str, Any]) -> None:
     """
     Инициализация ресурсов при старте воркера.
     """
+    # Import all models to ensure they are registered with SQLAlchemy
+    from modules.auth.models import RefreshToken, WebhookClient  # noqa: F401
+    from modules.messaging.models import Chat, Message  # noqa: F401
+    from modules.notifications.models import DeviceToken  # noqa: F401
+    from modules.users.models import Permission, Role, ServiceClient, User  # noqa: F401
+
     ctx["http_client"] = httpx.AsyncClient(timeout=10.0)
     logger.info("ARQ worker started")
 

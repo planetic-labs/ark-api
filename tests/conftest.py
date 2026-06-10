@@ -1,4 +1,8 @@
+# ruff: noqa: E402
 import asyncio
+
+# Redirect test database URL to 'ark_test' to avoid clearing development DB
+import urllib.parse
 from collections.abc import AsyncGenerator
 
 import pytest
@@ -9,6 +13,13 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from sqlalchemy.pool import NullPool
 
 from core.config import settings
+
+# Redirect test database URL to 'ark_test' to avoid clearing development DB
+url_parts = list(urllib.parse.urlparse(settings.DATABASE_URL))
+if url_parts[2] == "/ark":
+    url_parts[2] = "/ark_test"
+    settings.DATABASE_URL = urllib.parse.urlunparse(url_parts)
+
 from core.database import get_session
 from main import app
 
@@ -54,18 +65,51 @@ async def reset_redis_pool():
         pass
 
 
+@pytest_asyncio.fixture(scope="session", autouse=True)
+async def setup_test_database():
+    # 1. Create 'ark_test' database if it doesn't exist
+    admin_url = settings.DATABASE_URL
+    url_parts = list(urllib.parse.urlparse(admin_url))
+    url_parts[2] = "/postgres"
+    postgres_url = urllib.parse.urlunparse(url_parts)
+
+    admin_engine = create_async_engine(postgres_url, isolation_level="AUTOCOMMIT")
+    async with admin_engine.connect() as conn:
+        res = await conn.execute(
+            sa.text("SELECT 1 FROM pg_database WHERE datname = 'ark_test'")
+        )
+        if not res.scalar():
+            await conn.execute(sa.text("CREATE DATABASE ark_test"))
+    await admin_engine.dispose()
+
+    # 2. Create tables inside 'ark_test'
+    from core.models import Base
+
+    # Import all models to ensure they are registered with Base.metadata
+    from modules.auth.models import RefreshToken, WebhookClient  # noqa: F401
+    from modules.messaging.models import Chat, Message  # noqa: F401
+    from modules.notifications.models import DeviceToken  # noqa: F401
+    from modules.users.models import Permission, Role, ServiceClient, User  # noqa: F401
+
+    async with test_engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    yield
+
+
 async def clean_database():
     tables = [
         "refresh_tokens",
         "user_roles",
         "role_permissions",
         "user_permissions",
+        "device_tokens",
         "users",
         "roles",
         "permissions",
         "service_clients",
         "webhook_clients",
     ]
+
     async with TestingSessionLocal() as session:
         for table in tables:
             try:

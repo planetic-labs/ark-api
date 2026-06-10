@@ -11,6 +11,10 @@ from core.config import settings
 from core.models import Base
 
 # Import all models to ensure they are registered with Base.metadata
+from modules.auth.models import RefreshToken, WebhookClient  # noqa: F401
+from modules.messaging.models import Chat, Message  # noqa: F401
+from modules.notifications.models import DeviceToken  # noqa: F401
+from modules.users.models import Permission, Role, ServiceClient, User  # noqa: F401
 
 # this is the Alembic Config object
 config = context.config
