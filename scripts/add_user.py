@@ -22,7 +22,7 @@ async def add_user(email: str):
         if not role:
             result = await session.execute(select(Role).where(Role.name == "student"))
             role = result.scalar_one_or_none()
-        
+
         if not role:
             # Create student role if not found
             role = Role(name="student", is_system=False, is_default=True)
@@ -36,17 +36,19 @@ async def add_user(email: str):
             is_active=True,
             is_approved=True,
             email_verified=True,
-            status="active"
+            status="active",
         )
         user.full_name = email.split("@")[0].capitalize()
         user.roles.append(role)
-        
+
         session.add(user)
         await session.commit()
         print(f"Successfully added user: {email} (role: {role.name})")
 
+
 if __name__ == "__main__":
     import sys
+
     email = "prusikov@gmail.com"
     if len(sys.argv) > 1:
         email = sys.argv[1]

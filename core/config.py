@@ -1,4 +1,3 @@
-
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -9,7 +8,7 @@ class Settings(BaseSettings):
 
     # Database
     DATABASE_URL: str
-    
+
     # Redis
     REDIS_URL: str
 
@@ -24,21 +23,24 @@ class Settings(BaseSettings):
     JWT_PRIVATE_KEY: str | None = None
     JWT_PUBLIC_KEY: str | None = None
     JWT_ACCESS_TTL: int = 900  # 15 minutes
-    
+
     # Auth
     # Auth
-    AUTH_CODE_EXPIRE_SECONDS: int = 600 # 10 minutes
+    AUTH_CODE_EXPIRE_SECONDS: int = 600  # 10 minutes
     SUPERUSER_EMAIL: str | None = None
 
     # Email (Resend)
     # Email (Resend)
     RESEND_API_KEY: str | None = None
-    EMAIL_FROM: str = "Ark Messenger <onboarding@resend.dev>" # Default resend test email
+    EMAIL_FROM: str = (
+        "Ark Messenger <onboarding@resend.dev>"  # Default resend test email
+    )
 
     @property
     def allowed_origins_list(self) -> list[str]:
         return [x.strip() for x in self.ALLOWED_ORIGINS.split(",") if x.strip()]
 
     model_config = SettingsConfigDict(env_file=".env", case_sensitive=True)
+
 
 settings = Settings()

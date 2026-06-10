@@ -25,10 +25,12 @@ app = FastAPI(
     openapi_url="/openapi.json" if settings.DEBUG else None,
 )
 
+
 @app.on_event("startup")
 async def startup_event():
     asyncio.create_task(redis_broadcast_reader())
     await create_superuser_if_not_exists()
+
 
 @app.websocket("/ws")
 async def websocket_endpoint(
@@ -36,10 +38,10 @@ async def websocket_endpoint(
     token: str = None,
 ):
     from core.security import decode_token
-    
+
     await websocket.accept()
     logger.info("WS handshake started", has_token=bool(token))
-    
+
     if not token:
         logger.warning("WS rejected: No token provided")
         await websocket.close(code=4003)
@@ -66,6 +68,7 @@ async def websocket_endpoint(
     except WebSocketDisconnect:
         manager.disconnect(user_id, websocket)
 
+
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     logger.error("Global error", error=str(exc), path=request.url.path)
@@ -73,6 +76,7 @@ async def global_exception_handler(request: Request, exc: Exception):
         status_code=500,
         content={"detail": "Internal Server Error"},
     )
+
 
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(users_router, prefix="/api/v1")
@@ -87,20 +91,25 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.get("/")
 async def root():
     return {"message": "Welcome to Ark Messenger API", "version": "2026.5.23"}
+
 
 @app.get("/health")
 async def health_check():
     return {"status": "ok"}
 
+
 @app.get("/.well-known/jwks.json")
 async def jwks():
     from core.security import get_jwks
+
     return get_jwks()
 
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

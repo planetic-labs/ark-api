@@ -14,11 +14,12 @@ class UserBaseSchema(BaseModel):
     is_approved: bool
     avatar_url: str | None = None
 
+
 class UserSchema(UserBaseSchema):
     id: str
     status: str = "created"
     roles: list[str] = []
-    
+
     model_config = ConfigDict(from_attributes=True)
 
     @field_validator("roles", mode="before")
@@ -28,11 +29,13 @@ class UserSchema(UserBaseSchema):
             return []
         return [r.name if hasattr(r, "name") else str(r) for r in v]
 
+
 class UserUpdateSchema(BaseModel):
     first_name: str | None = None
     last_name: str | None = None
     full_name: str | None = None
     avatar_url: str | None = None
+
 
 class UserCreateSchema(BaseModel):
     email: EmailStr
@@ -108,7 +111,3 @@ class ServiceClientCreateSchema(BaseModel):
 class ServiceClientCreateResponseSchema(BaseModel):
     client: ServiceClientSchema
     token: str
-
-
-
-

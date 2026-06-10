@@ -15,17 +15,16 @@ async def test_auth_identify(client, db):
     role = Role(name="student", is_default=True)
     db.add(role)
     user = User(
-        email="test@ark.com",
-        status="created",
-        is_active=True,
-        is_approved=False
+        email="test@ark.com", status="created", is_active=True, is_approved=False
     )
     user.roles.append(role)
     db.add(user)
     await db.commit()
 
     # Identify existing email
-    response = await client.post("/api/v1/auth/identify", json={"email": "test@ark.com"})
+    response = await client.post(
+        "/api/v1/auth/identify", json={"email": "test@ark.com"}
+    )
     assert response.status_code == 200
     assert response.json() == {"next": "enter_code"}
 
@@ -35,42 +34,35 @@ async def test_auth_identify(client, db):
     assert len(code) == 6
 
     # Identify non-existent email
-    response = await client.post("/api/v1/auth/identify", json={"email": "unknown@ark.com"})
+    response = await client.post(
+        "/api/v1/auth/identify", json={"email": "unknown@ark.com"}
+    )
     assert response.status_code == 200
     assert response.json() == {"error": "not_found"}
 
     # Identify disabled email
-    disabled_user = User(
-        email="disabled@ark.com",
-        status="disabled",
-        is_active=True
-    )
+    disabled_user = User(email="disabled@ark.com", status="disabled", is_active=True)
     db.add(disabled_user)
     await db.commit()
 
-    response = await client.post("/api/v1/auth/identify", json={"email": "disabled@ark.com"})
+    response = await client.post(
+        "/api/v1/auth/identify", json={"email": "disabled@ark.com"}
+    )
     assert response.status_code == 200
     assert response.json() == {"error": "not_found"}
+
 
 @pytest.mark.asyncio
 async def test_auth_verify_code(client, db):
     # Setup roles and user
     role = Role(name="student", is_default=True)
     db.add(role)
-    user_created = User(
-        email="created@ark.com",
-        status="created",
-        is_active=True
-    )
+    user_created = User(email="created@ark.com", status="created", is_active=True)
     user_created.roles.append(role)
-    
-    user_active = User(
-        email="active@ark.com",
-        status="active",
-        is_active=True
-    )
+
+    user_active = User(email="active@ark.com", status="active", is_active=True)
     user_active.roles.append(role)
-    
+
     db.add(user_created)
     db.add(user_active)
     await db.commit()
@@ -83,20 +75,20 @@ async def test_auth_verify_code(client, db):
     code_active = await get_auth_code("active@ark.com")
 
     # Verify code for 'created' user -> transition to setup_profile
-    response = await client.post("/api/v1/auth/verify-code", json={
-        "email": "created@ark.com",
-        "code": code_created
-    })
+    response = await client.post(
+        "/api/v1/auth/verify-code",
+        json={"email": "created@ark.com", "code": code_created},
+    )
     assert response.status_code == 200
     data = response.json()
     assert data["next"] == "setup_profile"
     assert data["setup_token"] is not None
 
     # Verify code for 'active' user -> direct login (home)
-    response = await client.post("/api/v1/auth/verify-code", json={
-        "email": "active@ark.com",
-        "code": code_active
-    })
+    response = await client.post(
+        "/api/v1/auth/verify-code",
+        json={"email": "active@ark.com", "code": code_active},
+    )
     assert response.status_code == 200
     data = response.json()
     assert data["next"] == "home"
@@ -104,22 +96,18 @@ async def test_auth_verify_code(client, db):
     assert data["refresh_token"] is not None
 
     # Verify with invalid code -> 401
-    response = await client.post("/api/v1/auth/verify-code", json={
-        "email": "active@ark.com",
-        "code": "000000"
-    })
+    response = await client.post(
+        "/api/v1/auth/verify-code", json={"email": "active@ark.com", "code": "000000"}
+    )
     assert response.status_code == 401
+
 
 @pytest.mark.asyncio
 async def test_auth_setup(client, db):
     # Setup default role and user
     role = Role(name="student", is_default=True)
     db.add(role)
-    user = User(
-        email="setup@ark.com",
-        status="created",
-        is_active=True
-    )
+    user = User(email="setup@ark.com", status="created", is_active=True)
     db.add(user)
     await db.commit()
 
@@ -128,12 +116,15 @@ async def test_auth_setup(client, db):
     await set_setup_token(setup_token, user.id)
 
     # Post setup profile data
-    response = await client.post("/api/v1/auth/setup", json={
-        "setup_token": setup_token,
-        "first_name": "Jane",
-        "last_name": "Doe",
-        "avatar_url": "http://avatar.com/jane"
-    })
+    response = await client.post(
+        "/api/v1/auth/setup",
+        json={
+            "setup_token": setup_token,
+            "first_name": "Jane",
+            "last_name": "Doe",
+            "avatar_url": "http://avatar.com/jane",
+        },
+    )
     assert response.status_code == 200
     data = response.json()
     assert data["access_token"] is not None
@@ -141,7 +132,7 @@ async def test_auth_setup(client, db):
 
     # Reload user from DB and assert profile changes
     db.expire_all()
-    
+
     result = await db.execute(select(User).where(User.email == "setup@ark.com"))
     updated_user = result.scalar_one()
     assert updated_user.status == "active"
@@ -150,16 +141,13 @@ async def test_auth_setup(client, db):
     assert updated_user.avatar_url == "http://avatar.com/jane"
     assert any(r.name == "student" for r in updated_user.roles)
 
+
 @pytest.mark.asyncio
 async def test_auth_refresh(client, db):
     # Setup: Create active user and seed RefreshToken
     role = Role(name="student", is_default=True)
     db.add(role)
-    user = User(
-        email="refresh@ark.com",
-        status="active",
-        is_active=True
-    )
+    user = User(email="refresh@ark.com", status="active", is_active=True)
     user.roles.append(role)
     db.add(user)
     await db.commit()
@@ -167,25 +155,25 @@ async def test_auth_refresh(client, db):
     from datetime import datetime, timedelta
 
     import ulid
-    
+
     refresh_token_id = str(ulid.ULID())
     refresh_token_str = "initial-refresh-token-string-hex-32"
     refresh_token_hash = hash_token(refresh_token_str)
-    
+
     expires_at = datetime.now(UTC) + timedelta(days=7)
     db_token = RefreshToken(
         id=refresh_token_id,
         token_hash=refresh_token_hash,
         user_id=user.id,
-        expires_at=expires_at
+        expires_at=expires_at,
     )
     db.add(db_token)
     await db.commit()
 
     # Trigger refresh
-    response = await client.post("/api/v1/auth/refresh", json={
-        "refresh_token": refresh_token_str
-    })
+    response = await client.post(
+        "/api/v1/auth/refresh", json={"refresh_token": refresh_token_str}
+    )
     assert response.status_code == 200
     data = response.json()
     assert data["access_token"] is not None
@@ -193,23 +181,24 @@ async def test_auth_refresh(client, db):
     assert data["refresh_token"] != refresh_token_str
 
     # Assert old token is deleted and new token is stored in DB
-    result = await db.execute(select(RefreshToken).where(RefreshToken.token_hash == refresh_token_hash))
+    result = await db.execute(
+        select(RefreshToken).where(RefreshToken.token_hash == refresh_token_hash)
+    )
     assert result.scalar_one_or_none() is None
 
     new_hash = hash_token(data["refresh_token"])
-    result = await db.execute(select(RefreshToken).where(RefreshToken.token_hash == new_hash))
+    result = await db.execute(
+        select(RefreshToken).where(RefreshToken.token_hash == new_hash)
+    )
     assert result.scalar_one_or_none() is not None
+
 
 @pytest.mark.asyncio
 async def test_auth_logout(client, db):
     # Setup
     role = Role(name="student", is_default=True)
     db.add(role)
-    user = User(
-        email="logout@ark.com",
-        status="active",
-        is_active=True
-    )
+    user = User(email="logout@ark.com", status="active", is_active=True)
     user.roles.append(role)
     db.add(user)
     await db.commit()
@@ -217,39 +206,38 @@ async def test_auth_logout(client, db):
     from datetime import datetime, timedelta
 
     import ulid
-    
+
     refresh_token_id = str(ulid.ULID())
     refresh_token_str = "logout-refresh-token-string"
     refresh_token_hash = hash_token(refresh_token_str)
-    
+
     db_token = RefreshToken(
         id=refresh_token_id,
         token_hash=refresh_token_hash,
         user_id=user.id,
-        expires_at=datetime.now(UTC) + timedelta(days=7)
+        expires_at=datetime.now(UTC) + timedelta(days=7),
     )
     db.add(db_token)
     await db.commit()
 
     # Generate access token pointing to this refresh token session
     access_token = create_access_token(
-        subject=user.id,
-        roles=["student"],
-        status=user.status,
-        jti=refresh_token_id
+        subject=user.id, roles=["student"], status=user.status, jti=refresh_token_id
     )
 
     # Logout
     response = await client.post(
-        "/api/v1/auth/logout",
-        headers={"Authorization": f"Bearer {access_token}"}
+        "/api/v1/auth/logout", headers={"Authorization": f"Bearer {access_token}"}
     )
     assert response.status_code == 200
     assert response.json() == {"message": "Logged out successfully"}
 
     # Assert token revoked from DB
-    result = await db.execute(select(RefreshToken).where(RefreshToken.id == refresh_token_id))
+    result = await db.execute(
+        select(RefreshToken).where(RefreshToken.id == refresh_token_id)
+    )
     assert result.scalar_one_or_none() is None
+
 
 @pytest.mark.asyncio
 async def test_auth_logout_webhook_enqueued(client, db, monkeypatch):
@@ -257,26 +245,37 @@ async def test_auth_logout_webhook_enqueued(client, db, monkeypatch):
 
     import core.redis as r
     from modules.auth.models import WebhookClient
-    
+
     mock_enqueue = AsyncMock()
     monkeypatch.setattr(r, "enqueue_revocation_webhook", mock_enqueue)
-    
+
     # Добавляем вебхуки в тестовую БД
-    webhook1 = WebhookClient(name="Service 1", url="http://webhook1.com", secret_key="secret1", is_active=True)
-    webhook2 = WebhookClient(name="Service 2", url="http://webhook2.com", secret_key="secret2", is_active=True)
-    webhook_inactive = WebhookClient(name="Inactive Service", url="http://inactive.com", secret_key="secret3", is_active=False)
+    webhook1 = WebhookClient(
+        name="Service 1",
+        url="http://webhook1.com",
+        secret_key="secret1",
+        is_active=True,
+    )
+    webhook2 = WebhookClient(
+        name="Service 2",
+        url="http://webhook2.com",
+        secret_key="secret2",
+        is_active=True,
+    )
+    webhook_inactive = WebhookClient(
+        name="Inactive Service",
+        url="http://inactive.com",
+        secret_key="secret3",
+        is_active=False,
+    )
     db.add(webhook1)
     db.add(webhook2)
     db.add(webhook_inactive)
     await db.commit()
-    
+
     role = Role(name="student", is_default=True)
     db.add(role)
-    user = User(
-        email="logout_webhook@ark.com",
-        status="active",
-        is_active=True
-    )
+    user = User(email="logout_webhook@ark.com", status="active", is_active=True)
     user.roles.append(role)
     db.add(user)
     await db.commit()
@@ -284,75 +283,80 @@ async def test_auth_logout_webhook_enqueued(client, db, monkeypatch):
     from datetime import datetime, timedelta
 
     import ulid
-    
+
     refresh_token_id = str(ulid.ULID())
     refresh_token_str = "logout-webhook-refresh"
     refresh_token_hash = hash_token(refresh_token_str)
-    
+
     db_token = RefreshToken(
         id=refresh_token_id,
         token_hash=refresh_token_hash,
         user_id=user.id,
-        expires_at=datetime.now(UTC) + timedelta(days=7)
+        expires_at=datetime.now(UTC) + timedelta(days=7),
     )
     db.add(db_token)
     await db.commit()
 
     access_token = create_access_token(
-        subject=user.id,
-        roles=["student"],
-        status=user.status,
-        jti=refresh_token_id
+        subject=user.id, roles=["student"], status=user.status, jti=refresh_token_id
     )
 
     response = await client.post(
-        "/api/v1/auth/logout",
-        headers={"Authorization": f"Bearer {access_token}"}
+        "/api/v1/auth/logout", headers={"Authorization": f"Bearer {access_token}"}
     )
     assert response.status_code == 200
-    
+
     # Должен быть вызван только для 2-х активных вебхуков
     assert mock_enqueue.call_count == 2
     mock_enqueue.assert_any_call(
         user_id=user.id,
         jti=refresh_token_id,
         webhook_url="http://webhook1.com",
-        webhook_secret="secret1"
+        webhook_secret="secret1",
     )
     mock_enqueue.assert_any_call(
         user_id=user.id,
         jti=refresh_token_id,
         webhook_url="http://webhook2.com",
-        webhook_secret="secret2"
+        webhook_secret="secret2",
     )
+
 
 @pytest.mark.asyncio
 async def test_rbac_permissions(client, db):
     # Create two users: student and admin
     admin_role = Role(name="admin", is_system=True)
     student_role = Role(name="student", is_default=True)
-    
+
     # Give a custom permission to student
     custom_perm = Permission(key="read_logs", description="Can read logs")
     student_role.permissions.append(custom_perm)
-    
+
     db.add(admin_role)
     db.add(student_role)
     db.add(custom_perm)
-    
-    admin_user = User(email="admin-user@ark.com", status="active", is_approved=True, is_active=True)
+
+    admin_user = User(
+        email="admin-user@ark.com", status="active", is_approved=True, is_active=True
+    )
     admin_user.roles.append(admin_role)
-    
-    student_user = User(email="student-user@ark.com", status="active", is_approved=True, is_active=True)
+
+    student_user = User(
+        email="student-user@ark.com", status="active", is_approved=True, is_active=True
+    )
     student_user.roles.append(student_role)
-    
+
     db.add(admin_user)
     db.add(student_user)
     await db.commit()
 
     # Generate tokens
-    admin_token = create_access_token(subject=admin_user.id, roles=["admin"], status="active")
-    student_token = create_access_token(subject=student_user.id, roles=["student"], status="active")
+    admin_token = create_access_token(
+        subject=admin_user.id, roles=["admin"], status="active"
+    )
+    student_token = create_access_token(
+        subject=student_user.id, roles=["student"], status="active"
+    )
 
     # Try creating user as student -> 403 Forbidden (require_role("admin"))
     response = await client.post(
@@ -362,9 +366,9 @@ async def test_rbac_permissions(client, db):
             "full_name": "New User",
             "role": "student",
             "is_active": True,
-            "is_approved": True
+            "is_approved": True,
         },
-        headers={"Authorization": f"Bearer {student_token}"}
+        headers={"Authorization": f"Bearer {student_token}"},
     )
     assert response.status_code == 403
 
@@ -376,11 +380,12 @@ async def test_rbac_permissions(client, db):
             "full_name": "New User",
             "role": "student",
             "is_active": True,
-            "is_approved": True
+            "is_approved": True,
         },
-        headers={"Authorization": f"Bearer {admin_token}"}
+        headers={"Authorization": f"Bearer {admin_token}"},
     )
     assert response.status_code == 201
+
 
 @pytest.mark.asyncio
 async def test_approved_user_restriction(client, db):
@@ -388,10 +393,7 @@ async def test_approved_user_restriction(client, db):
     role = Role(name="student", is_default=True)
     db.add(role)
     user = User(
-        email="unapproved@ark.com",
-        status="active",
-        is_approved=False,
-        is_active=True
+        email="unapproved@ark.com", status="active", is_approved=False, is_active=True
     )
     user.roles.append(role)
     db.add(user)
@@ -401,24 +403,21 @@ async def test_approved_user_restriction(client, db):
 
     # Access /api/v1/users/ -> 403 Forbidden
     response = await client.get(
-        "/api/v1/users",
-        headers={"Authorization": f"Bearer {token}"}
+        "/api/v1/users", headers={"Authorization": f"Bearer {token}"}
     )
     assert response.status_code == 403
     assert response.json()["detail"] == "User account not approved by administrator"
 
     # Access /api/v1/messaging/chats -> 403 Forbidden
     response = await client.get(
-        "/api/v1/messaging/chats",
-        headers={"Authorization": f"Bearer {token}"}
+        "/api/v1/messaging/chats", headers={"Authorization": f"Bearer {token}"}
     )
     assert response.status_code == 403
     assert response.json()["detail"] == "User account not approved by administrator"
 
     # Access /api/v1/users/me -> 200 OK (unapproved users can view their own profile/status)
     response = await client.get(
-        "/api/v1/users/me",
-        headers={"Authorization": f"Bearer {token}"}
+        "/api/v1/users/me", headers={"Authorization": f"Bearer {token}"}
     )
     assert response.status_code == 200
     assert response.json()["email"] == "unapproved@ark.com"
@@ -461,25 +460,24 @@ async def test_auth_verify_code_brute_force(client, db):
     role = Role(name="student", is_default=True)
     db.add(role)
     user = User(
-        email="bruteforce@ark.com",
-        status="active",
-        is_active=True,
-        is_approved=True
+        email="bruteforce@ark.com", status="active", is_active=True, is_approved=True
     )
     user.roles.append(role)
     db.add(user)
     await db.commit()
 
     # Identify to generate a code
-    response = await client.post("/api/v1/auth/identify", json={"email": "bruteforce@ark.com"})
+    response = await client.post(
+        "/api/v1/auth/identify", json={"email": "bruteforce@ark.com"}
+    )
     assert response.status_code == 200
-    
+
     # Try verifying with incorrect code 5 times
     for _ in range(5):
-        response = await client.post("/api/v1/auth/verify-code", json={
-            "email": "bruteforce@ark.com",
-            "code": "000000"
-        })
+        response = await client.post(
+            "/api/v1/auth/verify-code",
+            json={"email": "bruteforce@ark.com", "code": "000000"},
+        )
         assert response.status_code == 401
 
     # Now verify with the correct code should fail because it was deleted
@@ -490,13 +488,17 @@ async def test_auth_verify_code_brute_force(client, db):
 @pytest.mark.asyncio
 async def test_messaging_chat_messages_bola(client, db):
     from modules.messaging.models import Chat, Message, chat_members
-    
+
     role = Role(name="student", is_default=True)
     db.add(role)
-    
+
     # Create two active users
-    user_a = User(email="user_a@ark.com", status="active", is_active=True, is_approved=True)
-    user_b = User(email="user_b@ark.com", status="active", is_active=True, is_approved=True)
+    user_a = User(
+        email="user_a@ark.com", status="active", is_active=True, is_approved=True
+    )
+    user_b = User(
+        email="user_b@ark.com", status="active", is_active=True, is_approved=True
+    )
     user_a.roles.append(role)
     user_b.roles.append(role)
     db.add(user_a)
@@ -525,7 +527,7 @@ async def test_messaging_chat_messages_bola(client, db):
     # User B requests messages for Chat A -> 403 Forbidden
     response = await client.get(
         f"/api/v1/messaging/chats/{chat.id}/messages",
-        headers={"Authorization": f"Bearer {token_b}"}
+        headers={"Authorization": f"Bearer {token_b}"},
     )
     assert response.status_code == 403
     assert response.json()["detail"] == "User not in chat"
@@ -536,7 +538,7 @@ async def test_messaging_chat_messages_bola(client, db):
     # User A requests messages for Chat A -> 200 OK
     response = await client.get(
         f"/api/v1/messaging/chats/{chat.id}/messages",
-        headers={"Authorization": f"Bearer {token_a}"}
+        headers={"Authorization": f"Bearer {token_a}"},
     )
     assert response.status_code == 200
     assert len(response.json()) == 1
@@ -546,19 +548,17 @@ async def test_messaging_chat_messages_bola(client, db):
 @pytest.mark.asyncio
 async def test_auth_refresh_grace_period_race_condition(client, db):
     from core.redis import get_redis_client
+
     # Setup: Create active user and seed RefreshToken
     role = Role(name="student", is_default=True)
     db.add(role)
-    user = User(
-        email="refresh_race@ark.com",
-        status="active",
-        is_active=True
-    )
+    user = User(email="refresh_race@ark.com", status="active", is_active=True)
     user.roles.append(role)
     db.add(user)
     await db.commit()
 
     from datetime import datetime, timedelta
+
     import ulid
 
     refresh_token_id = str(ulid.ULID())
@@ -570,24 +570,24 @@ async def test_auth_refresh_grace_period_race_condition(client, db):
         id=refresh_token_id,
         token_hash=refresh_token_hash,
         user_id=user.id,
-        expires_at=expires_at
+        expires_at=expires_at,
     )
     db.add(db_token)
     await db.commit()
 
     # First refresh call (simulating request 1)
-    response1 = await client.post("/api/v1/auth/refresh", json={
-        "refresh_token": refresh_token_str
-    })
+    response1 = await client.post(
+        "/api/v1/auth/refresh", json={"refresh_token": refresh_token_str}
+    )
     assert response1.status_code == 200
     data1 = response1.json()
     assert data1["access_token"] is not None
     assert data1["refresh_token"] is not None
 
     # Second refresh call (simulating request 2 in parallel/grace period)
-    response2 = await client.post("/api/v1/auth/refresh", json={
-        "refresh_token": refresh_token_str
-    })
+    response2 = await client.post(
+        "/api/v1/auth/refresh", json={"refresh_token": refresh_token_str}
+    )
     assert response2.status_code == 200
     data2 = response2.json()
     # It must return the exact same token pair
@@ -599,9 +599,9 @@ async def test_auth_refresh_grace_period_race_condition(client, db):
         await redis.delete(f"auth:rotation:{refresh_token_hash}")
 
     # Third refresh call (after grace period expired) -> should fail
-    response3 = await client.post("/api/v1/auth/refresh", json={
-        "refresh_token": refresh_token_str
-    })
+    response3 = await client.post(
+        "/api/v1/auth/refresh", json={"refresh_token": refresh_token_str}
+    )
     assert response3.status_code == 401
 
 
@@ -609,8 +609,12 @@ async def test_auth_refresh_grace_period_race_condition(client, db):
 async def test_create_chat_success(client, db):
     role = Role(name="student", is_default=True)
     db.add(role)
-    user_a = User(email="usera@ark.com", status="active", is_active=True, is_approved=True)
-    user_b = User(email="userb@ark.com", status="active", is_active=True, is_approved=True)
+    user_a = User(
+        email="usera@ark.com", status="active", is_active=True, is_approved=True
+    )
+    user_b = User(
+        email="userb@ark.com", status="active", is_active=True, is_approved=True
+    )
     user_a.roles.append(role)
     user_b.roles.append(role)
     db.add(user_a)
@@ -624,12 +628,8 @@ async def test_create_chat_success(client, db):
     # Send POST using member_ids
     response = await client.post(
         "/api/v1/messaging/chats",
-        json={
-            "name": "Test Group Chat",
-            "is_group": True,
-            "member_ids": [user_b.id]
-        },
-        headers={"Authorization": f"Bearer {token_a}"}
+        json={"name": "Test Group Chat", "is_group": True, "member_ids": [user_b.id]},
+        headers={"Authorization": f"Bearer {token_a}"},
     )
     assert response.status_code == 200
     data = response.json()

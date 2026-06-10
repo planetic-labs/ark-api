@@ -18,15 +18,13 @@ test_engine = create_async_engine(
     settings.DATABASE_URL,
     poolclass=NullPool,
     echo=False,  # Set to False to keep test logs cleaner
-    future=True
+    future=True,
 )
 
 TestingSessionLocal = async_sessionmaker(
-    bind=test_engine,
-    class_=AsyncSession,
-    expire_on_commit=False,
-    autoflush=False
+    bind=test_engine, class_=AsyncSession, expire_on_commit=False, autoflush=False
 )
+
 
 @pytest.fixture(scope="session")
 def event_loop():
@@ -34,28 +32,27 @@ def event_loop():
     yield loop
     loop.close()
 
+
 @pytest_asyncio.fixture(scope="function", autouse=True)
 async def reset_redis_pool():
     import redis.asyncio as redis
 
     import core.redis as r
     from core.config import settings
-    
+
     # Close old pool if any
     try:
         await r.pool.disconnect()
     except Exception:
         pass
-        
-    r.pool = redis.ConnectionPool.from_url(
-        settings.REDIS_URL, 
-        decode_responses=True
-    )
+
+    r.pool = redis.ConnectionPool.from_url(settings.REDIS_URL, decode_responses=True)
     yield
     try:
         await r.pool.disconnect()
     except Exception:
         pass
+
 
 async def clean_database():
     tables = [
@@ -67,7 +64,7 @@ async def clean_database():
         "roles",
         "permissions",
         "service_clients",
-        "webhook_clients"
+        "webhook_clients",
     ]
     async with TestingSessionLocal() as session:
         for table in tables:
@@ -80,23 +77,26 @@ async def clean_database():
     # Clear Redis to prevent cross-test side effects
     try:
         from core.redis import get_redis_client
+
         async with get_redis_client() as redis:
             await redis.flushdb()
     except Exception as e:
         print(f"Error flushing Redis: {e}")
 
+
 @pytest_asyncio.fixture(scope="function")
 async def db() -> AsyncGenerator[AsyncSession]:
     # Clear DB before test
     await clean_database()
-    
+
     # Yield a clean session for test setup
     async with TestingSessionLocal() as session:
         yield session
         await session.commit()
-        
+
     # Clear DB after test
     await clean_database()
+
 
 @pytest_asyncio.fixture(scope="function")
 async def client() -> AsyncGenerator[AsyncClient]:
@@ -106,10 +106,9 @@ async def client() -> AsyncGenerator[AsyncClient]:
             yield session
 
     app.dependency_overrides[get_session] = override_get_session
-    
+
     async with AsyncClient(
-        transport=ASGITransport(app=app),
-        base_url="http://testserver"
+        transport=ASGITransport(app=app), base_url="http://testserver"
     ) as ac:
         yield ac
 

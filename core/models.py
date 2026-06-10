@@ -7,23 +7,19 @@ from ulid import ULID
 
 # Custom type for ULID primary key
 pk_ulid = Annotated[
-    str, 
-    mapped_column(String(26), primary_key=True, default=lambda: str(ULID()))
+    str, mapped_column(String(26), primary_key=True, default=lambda: str(ULID()))
 ]
+
 
 class Base(DeclarativeBase):
     """Base class for all models"""
-    
+
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), 
-        server_default=func.now()
+        DateTime(timezone=True), server_default=func.now()
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), 
-        server_default=func.now(), 
-        onupdate=func.now()
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
     deleted_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), 
-        default=None
+        DateTime(timezone=True), default=None
     )

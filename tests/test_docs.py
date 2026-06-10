@@ -17,14 +17,15 @@ def test_docs_urls_when_debug_matches_app_state():
 
 def test_docs_urls_when_debug_true_are_enabled():
     from core.config import Settings
+
     custom_settings = Settings(
         DATABASE_URL="postgresql+asyncpg://postgres:postgres@db:5432/ark",
         REDIS_URL="redis://redis:6379/0",
         SECRET_KEY="test",
         ALLOWED_ORIGINS="http://localhost:3000",
-        DEBUG=True
+        DEBUG=True,
     )
-    
+
     test_app = FastAPI(
         docs_url="/docs" if custom_settings.DEBUG else None,
         redoc_url="/redoc" if custom_settings.DEBUG else None,
@@ -37,14 +38,15 @@ def test_docs_urls_when_debug_true_are_enabled():
 
 def test_docs_urls_when_debug_false_are_disabled():
     from core.config import Settings
+
     custom_settings = Settings(
         DATABASE_URL="postgresql+asyncpg://postgres:postgres@db:5432/ark",
         REDIS_URL="redis://redis:6379/0",
         SECRET_KEY="test",
         ALLOWED_ORIGINS="http://localhost:3000",
-        DEBUG=False
+        DEBUG=False,
     )
-    
+
     test_app = FastAPI(
         docs_url="/docs" if custom_settings.DEBUG else None,
         redoc_url="/redoc" if custom_settings.DEBUG else None,

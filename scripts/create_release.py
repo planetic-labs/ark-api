@@ -15,14 +15,13 @@ def run_git_command(args: list[str]) -> str:
     """Runs a git command and returns its stdout as string."""
     try:
         result = subprocess.run(
-            ["git"] + args,
-            capture_output=True,
-            text=True,
-            check=True
+            ["git"] + args, capture_output=True, text=True, check=True
         )
         return result.stdout.strip()
     except subprocess.CalledProcessError as e:
-        print(f"Error running git command {' '.join(args)}: {e.stderr}", file=sys.stderr)
+        print(
+            f"Error running git command {' '.join(args)}: {e.stderr}", file=sys.stderr
+        )
         raise
 
 
@@ -50,11 +49,11 @@ def calculate_next_version(date_str: str, tags: list[str]) -> str:
     """
     if not tags:
         return f"v{date_str}"
-        
+
     patch_numbers = []
     base_pattern = re.compile(rf"^v{re.escape(date_str)}$")
     patch_pattern = re.compile(rf"^v{re.escape(date_str)}\.patch(\d+)$")
-    
+
     for tag in tags:
         if base_pattern.match(tag):
             patch_numbers.append(0)
@@ -62,10 +61,10 @@ def calculate_next_version(date_str: str, tags: list[str]) -> str:
             match = patch_pattern.match(tag)
             if match:
                 patch_numbers.append(int(match.group(1)))
-                
+
     if not patch_numbers:
         return f"v{date_str}"
-        
+
     next_patch = max(patch_numbers) + 1
     if next_patch == 0:
         return f"v{date_str}"
@@ -78,7 +77,7 @@ def group_commits(commits: list[str]) -> str:
         "Features": [],
         "Bug Fixes": [],
         "Refactoring & Performance": [],
-        "Other Changes": []
+        "Other Changes": [],
     }
     for c in commits:
         c = c.strip()
@@ -110,7 +109,9 @@ def get_changelog() -> str:
         log_range = "HEAD"
 
     try:
-        commits: list[str] = run_git_command(["log", log_range, "--pretty=format:%s"]).splitlines()
+        commits: list[str] = run_git_command(
+            ["log", log_range, "--pretty=format:%s"]
+        ).splitlines()
     except Exception:
         commits = []
 
@@ -131,7 +132,6 @@ def create_tag(version: str, changelog: str, dry_run: bool) -> None:
         print(f"Changelog included in tag:\n{changelog}\n")
 
 
-
 def push_tag(version: str, dry_run: bool) -> None:
     """Pushes a git tag to remote origin."""
     print(f"Pushing tag {version} to origin...")
@@ -145,7 +145,16 @@ def push_tag(version: str, dry_run: bool) -> None:
 def create_github_release(version: str, changelog: str, dry_run: bool) -> None:
     """Creates a GitHub release using the gh CLI tool."""
     print(f"Creating GitHub release for tag {version}...")
-    cmd = ["gh", "release", "create", version, "--title", f"Release {version}", "--notes", changelog]
+    cmd = [
+        "gh",
+        "release",
+        "create",
+        version,
+        "--title",
+        f"Release {version}",
+        "--notes",
+        changelog,
+    ]
     if dry_run:
         print(f"[DRY-RUN] {' '.join(cmd)}")
     else:
@@ -159,46 +168,75 @@ def create_github_release(version: str, changelog: str, dry_run: bool) -> None:
 
 def parse_arguments() -> argparse.Namespace:
     """Parses command line arguments."""
-    parser = argparse.ArgumentParser(description="Create a calendar versioned (CalVer) release.")
-    parser.add_argument("--dry-run", action="store_true", help="Calculate version and print commands without executing them.")
-    parser.add_argument("--allow-dirty", action="store_true", help="Allow creating release even if there are uncommitted changes.")
-    parser.add_argument("--push", action="store_true", help="Automatically push tag to origin without asking.")
-    parser.add_argument("--no-input", action="store_true", help="Do not ask for user input. Safe for automation.")
+    parser = argparse.ArgumentParser(
+        description="Create a calendar versioned (CalVer) release."
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Calculate version and print commands without executing them.",
+    )
+    parser.add_argument(
+        "--allow-dirty",
+        action="store_true",
+        help="Allow creating release even if there are uncommitted changes.",
+    )
+    parser.add_argument(
+        "--push",
+        action="store_true",
+        help="Automatically push tag to origin without asking.",
+    )
+    parser.add_argument(
+        "--no-input",
+        action="store_true",
+        help="Do not ask for user input. Safe for automation.",
+    )
     return parser.parse_args()
 
 
 def main():
     args = parse_arguments()
-    
+
     if not args.allow_dirty and not is_git_clean():
-        print("Error: Git working tree is dirty. Commit or stash your changes, or use --allow-dirty.", file=sys.stderr)
+        print(
+            "Error: Git working tree is dirty. Commit or stash your changes, or use --allow-dirty.",
+            file=sys.stderr,
+        )
         sys.exit(1)
-        
+
     date_str = get_current_date()
     tags = get_matching_tags(date_str)
     next_version = calculate_next_version(date_str, tags)
-    
+
     print(f"Current Date: {date_str}")
     print(f"Next release version: {next_version}")
-    
+
     changelog = get_changelog()
     create_tag(next_version, changelog, args.dry_run)
-    
+
     if args.dry_run:
         create_github_release(next_version, changelog, args.dry_run)
         return
-        
+
     if args.push:
         push_tag(next_version, args.dry_run)
         create_github_release(next_version, changelog, args.dry_run)
     elif not args.no_input:
         try:
-            user_input = input(f"Do you want to push tag '{next_version}' and create GitHub release? [y/N]: ").strip().lower()
+            user_input = (
+                input(
+                    f"Do you want to push tag '{next_version}' and create GitHub release? [y/N]: "
+                )
+                .strip()
+                .lower()
+            )
             if user_input in ("y", "yes"):
                 push_tag(next_version, args.dry_run)
                 create_github_release(next_version, changelog, args.dry_run)
             else:
-                print(f"Tag was not pushed. You can push it manually: git push origin {next_version}")
+                print(
+                    f"Tag was not pushed. You can push it manually: git push origin {next_version}"
+                )
         except KeyboardInterrupt:
             print("\nAborted pushing. Tag was created locally.")
             sys.exit(1)
