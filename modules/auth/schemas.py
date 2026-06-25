@@ -21,6 +21,7 @@ class VerifyCodeResponseSchema(BaseModel):
     access_token: str | None = None
     refresh_token: str | None = None
     expires_in: int | None = None
+    roles: list[str] | None = None
 
 
 class SetupProfileSchema(BaseModel):
@@ -34,6 +35,7 @@ class TokenResponseSchema(BaseModel):
     access_token: str
     refresh_token: str
     expires_in: int
+    roles: list[str]
 
 
 class RefreshTokenSchema(BaseModel):

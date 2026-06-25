@@ -1,42 +1,60 @@
 import base64
 import hashlib
+import os
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from typing import Any
 
 import jwt
+import structlog
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
+from pydantic import BaseModel
 
 from core.config import settings
 
 ALGORITHM = "RS256"
+
+
+logger = structlog.get_logger()
 
 # Try loading persistent keys for development fallback, otherwise generate once and save
 _key_dir = Path(__file__).resolve().parents[1] / ".keys"
 _private_key_path = _key_dir / "private.pem"
 _public_key_path = _key_dir / "public.pem"
 
-_temp_private_pem = ""
-_temp_public_pem = ""
 
-if _private_key_path.exists() and _public_key_path.exists():
-    try:
-        _temp_private_pem = _private_key_path.read_text(encoding="utf-8")
-        _temp_public_pem = _public_key_path.read_text(encoding="utf-8")
-    except Exception:
-        pass
+def _load_or_generate_keys() -> tuple[str, str]:
+    """В production ключи ОБЯЗАТЕЛЬНО через env vars."""
+    # 1. Приоритет — переменные окружения
+    if settings.JWT_PRIVATE_KEY and settings.JWT_PUBLIC_KEY:
+        return settings.JWT_PRIVATE_KEY, settings.JWT_PUBLIC_KEY
 
-if not _temp_private_pem or not _temp_public_pem:
-    _temp_private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
-    _temp_private_pem = _temp_private_key.private_bytes(
+    # 2. Файлы на диске
+    if _private_key_path.exists() and _public_key_path.exists():
+        try:
+            private_pem = _private_key_path.read_text(encoding="utf-8")
+            public_pem = _public_key_path.read_text(encoding="utf-8")
+            logger.info("RSA keys loaded from disk")
+            return private_pem, public_pem
+        except Exception as e:
+            logger.error("Failed to read RSA keys from disk", error=str(e))
+
+    # 3. Генерация (только для dev)
+    if not settings.DEBUG:
+        raise RuntimeError(
+            "RSA keys not found. Set JWT_PRIVATE_KEY/JWT_PUBLIC_KEY env vars."
+        )
+
+    logger.warning("Generating new RSA keys for development")
+    private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    private_pem = private_key.private_bytes(
         encoding=serialization.Encoding.PEM,
         format=serialization.PrivateFormat.PKCS8,
         encryption_algorithm=serialization.NoEncryption(),
     ).decode("utf-8")
 
-    _temp_public_pem = (
-        _temp_private_key.public_key()
+    public_pem = (
+        private_key.public_key()
         .public_bytes(
             encoding=serialization.Encoding.PEM,
             format=serialization.PublicFormat.SubjectPublicKeyInfo,
@@ -46,18 +64,24 @@ if not _temp_private_pem or not _temp_public_pem:
 
     try:
         _key_dir.mkdir(parents=True, exist_ok=True)
-        _private_key_path.write_text(_temp_private_pem, encoding="utf-8")
-        _public_key_path.write_text(_temp_public_pem, encoding="utf-8")
-    except Exception:
-        pass
+        _private_key_path.write_text(private_pem, encoding="utf-8")
+        os.chmod(_private_key_path, 0o600)  # Только владелец
+        _public_key_path.write_text(public_pem, encoding="utf-8")
+    except Exception as e:
+        logger.error("Failed to save generated keys to disk", error=str(e))
+
+    return private_pem, public_pem
+
+
+_PRIVATE_PEM, _PUBLIC_PEM = _load_or_generate_keys()
 
 
 def get_private_key() -> str:
-    return settings.JWT_PRIVATE_KEY or _temp_private_pem
+    return _PRIVATE_PEM
 
 
 def get_public_key() -> str:
-    return settings.JWT_PUBLIC_KEY or _temp_public_pem
+    return _PUBLIC_PEM
 
 
 def get_kid() -> str:
@@ -84,6 +108,8 @@ def create_access_token(
         "sub": str(subject),
         "roles": roles,
         "status": status,
+        "iss": settings.JWT_ISSUER,
+        "aud": settings.JWT_AUDIENCE,
     }
     if jti:
         to_encode["jti"] = jti
@@ -106,8 +132,23 @@ def hash_token(token: str) -> str:
     return hashlib.sha256(token.encode()).hexdigest()
 
 
-def decode_token(token: str) -> dict[str, Any]:
-    return jwt.decode(token, get_public_key(), algorithms=[ALGORITHM])
+class TokenPayload(BaseModel):
+    sub: str
+    roles: list[str]
+    status: str
+    exp: int
+    jti: str | None = None
+
+
+def decode_token(token: str) -> TokenPayload:
+    raw = jwt.decode(
+        token,
+        get_public_key(),
+        algorithms=[ALGORITHM],
+        audience=settings.JWT_AUDIENCE,
+        issuer=settings.JWT_ISSUER,
+    )
+    return TokenPayload.model_validate(raw)
 
 
 def get_jwks() -> dict:

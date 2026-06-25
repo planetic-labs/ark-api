@@ -5,7 +5,9 @@ from pydantic import BaseModel, ConfigDict, Field
 
 class DeviceTokenCreate(BaseModel):
     push_token: str = Field(
-        ..., description="Expo push token starting with ExponentPushToken"
+        ...,
+        pattern=r"^ExponentPushToken\[.+\]$",
+        description="Expo push token starting with ExponentPushToken",
     )
 
 

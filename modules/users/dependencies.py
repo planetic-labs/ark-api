@@ -1,4 +1,5 @@
 import jwt
+import structlog
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy import select
@@ -7,10 +8,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.database import get_session
 from core.security import decode_token
 from modules.users.models import User
+from modules.users.service import UserService
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/verify-code")
-
-import structlog
 
 logger = structlog.get_logger()
 
@@ -25,13 +25,13 @@ async def get_current_user(
     )
     try:
         payload = decode_token(token)
-        user_id: str = payload.get("sub")
-        if user_id is None:
+        user_id = payload.sub
+        if not user_id:
             logger.error("Token payload missing 'sub' claim")
             raise credentials_exception
     except jwt.PyJWTError as e:
         logger.error("JWT decoding failed", error=str(e))
-        raise credentials_exception
+        raise credentials_exception from e
 
     result = await session.execute(
         select(User).where(User.id == user_id, User.deleted_at.is_(None))
@@ -103,3 +103,9 @@ def require_permission(permission_key: str):
         return current_user
 
     return permission_checker
+
+
+async def get_users_service(
+    session: AsyncSession = Depends(get_session),
+) -> UserService:
+    return UserService(session)

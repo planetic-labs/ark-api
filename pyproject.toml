@@ -35,6 +35,15 @@ target-version = "py314"
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "C4", "DTZ", "PT"]
 
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = [
+    "fastapi.Depends",
+    "fastapi.params.Depends",
+    "fastapi.Security",
+    "modules.users.dependencies.require_role",
+    "modules.users.dependencies.require_approved_user",
+]
+
 [dependency-groups]
 dev = [
     "httpx>=0.28.1",

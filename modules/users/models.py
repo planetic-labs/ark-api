@@ -1,4 +1,9 @@
-from datetime import datetime
+from datetime import UTC, datetime
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from modules.messaging.models import Chat
+    from modules.notifications.models import DeviceToken
 
 import sqlalchemy as sa
 from sqlalchemy import ARRAY, Boolean, Column, DateTime, ForeignKey, String, Table
@@ -143,7 +148,7 @@ class User(Base):
 
     @property
     def is_admin(self) -> bool:
-        return any(role.name == "admin" or role.is_system for role in self.roles)
+        return any(role.name == "admin" for role in self.roles)
 
     @property
     def role(self) -> str:
@@ -196,7 +201,7 @@ class ServiceClient(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=sa.text("now()"),
-        default=datetime.utcnow,
+        default=lambda: datetime.now(UTC),
     )
     last_used_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True

@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from modules.users.schemas import UserSchema
 
@@ -22,7 +22,7 @@ class ChatSchema(ChatBaseSchema):
 
 
 class MessageBaseSchema(BaseModel):
-    content: str
+    content: str = Field(..., min_length=1, max_length=4000)
     chat_id: str
     parent_id: str | None = None
 

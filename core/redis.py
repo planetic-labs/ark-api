@@ -91,3 +91,17 @@ async def enqueue_push_notification(
         channel_id=channel_id,
         data=data,
     )
+
+
+async def enqueue_send_email(
+    to: str,
+    subject: str,
+    html: str,
+) -> None:
+    pool = await get_arq_pool()
+    await pool.enqueue_job(
+        "send_email_task",
+        to=to,
+        subject=subject,
+        html=html,
+    )

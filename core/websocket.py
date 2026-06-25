@@ -1,3 +1,4 @@
+import asyncio
 import json
 
 import structlog
@@ -41,22 +42,36 @@ class ConnectionManager:
 manager = ConnectionManager()
 
 
-async def redis_broadcast_reader():
-    """Listen to Redis and broadcast to local connected users"""
-    redis = get_redis_client()
-    pubsub = redis.pubsub()
-    await pubsub.subscribe("chat_events")
 
-    logger.info("Redis Broadcast Reader started")
-    try:
-        async for message in pubsub.listen():
-            if message["type"] == "message":
-                event = json.loads(message["data"])
-                # target_user_ids should be provided in the event
-                target_users = event.get("target_user_ids", [])
-                for user_id in target_users:
-                    await manager.send_personal_message(event["payload"], user_id)
-    except Exception as e:
-        logger.error("Redis Broadcast Reader failed", error=str(e))
-    finally:
-        await pubsub.unsubscribe("chat_events")
+
+MAX_RECONNECT_DELAY = 60
+INITIAL_RECONNECT_DELAY = 1
+
+
+async def redis_broadcast_reader() -> None:
+    """Listen to Redis and broadcast to local connected users with reconnect logic"""
+    delay = INITIAL_RECONNECT_DELAY
+    while True:
+        try:
+            redis = get_redis_client()
+            pubsub = redis.pubsub()
+            await pubsub.subscribe("chat_events")
+            logger.info("Redis broadcast reader connected")
+            delay = INITIAL_RECONNECT_DELAY
+
+            async for message in pubsub.listen():
+                if message["type"] == "message":
+                    event = json.loads(message["data"])
+                    target_users = event.get("target_user_ids", [])
+                    for user_id in target_users:
+                        await manager.send_personal_message(event["payload"], user_id)
+
+        except asyncio.CancelledError:
+            logger.info("Redis broadcast reader task cancelled")
+            break
+        except Exception as error:
+            logger.error(
+                "Redis listener failed, reconnecting", error=str(error), delay=delay
+            )
+            await asyncio.sleep(delay)
+            delay = min(delay * 2, MAX_RECONNECT_DELAY)

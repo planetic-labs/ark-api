@@ -8,6 +8,8 @@ class Settings(BaseSettings):
 
     # Database
     DATABASE_URL: str
+    DB_POOL_SIZE: int = 20
+    DB_MAX_OVERFLOW: int = 10
 
     # Redis
     REDIS_URL: str
@@ -23,6 +25,8 @@ class Settings(BaseSettings):
     JWT_PRIVATE_KEY: str | None = None
     JWT_PUBLIC_KEY: str | None = None
     JWT_ACCESS_TTL: int = 900  # 15 minutes
+    JWT_ISSUER: str = "ark-api"
+    JWT_AUDIENCE: str = "pulsar"
 
     # Auth
     # Auth

@@ -1,6 +1,7 @@
 import secrets
 from datetime import UTC, datetime, timedelta
 
+import structlog
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -18,13 +19,15 @@ from core.security import create_access_token, create_refresh_token, hash_token
 from modules.auth.models import RefreshToken
 from modules.users.models import Role, User
 
+logger = structlog.get_logger()
+
 
 class AuthService:
     def __init__(self, session: AsyncSession):
         self.session = session
 
     async def _get_or_create_default_role(self) -> Role:
-        result = await self.session.execute(select(Role).where(Role.is_default == True))
+        result = await self.session.execute(select(Role).where(Role.is_default))
         default_role = result.scalar_one_or_none()
         if not default_role:
             result = await self.session.execute(
@@ -40,11 +43,50 @@ class AuthService:
                 await self.session.flush()
         return default_role
 
+    async def _create_token_pair(self, user: User) -> dict[str, str | int | list[str]]:
+        """DRY: создание пары access + refresh token."""
+        if not user.roles:
+            default_role = await self._get_or_create_default_role()
+            user.roles.append(default_role)
+            await self.session.flush()
+
+        import ulid
+
+        refresh_token_id = str(ulid.ULID())
+        refresh_token_str = create_refresh_token()
+        refresh_token_hash = hash_token(refresh_token_str)
+
+        expires_at = datetime.now(UTC) + timedelta(
+            days=settings.REFRESH_TOKEN_EXPIRE_DAYS
+        )
+        db_refresh_token = RefreshToken(
+            id=refresh_token_id,
+            token_hash=refresh_token_hash,
+            user_id=user.id,
+            expires_at=expires_at,
+        )
+        self.session.add(db_refresh_token)
+
+        role_names = [role.name for role in user.roles]
+        access_token = create_access_token(
+            subject=user.id,
+            roles=role_names,
+            status=user.status,
+            jti=refresh_token_id,
+        )
+        return {
+            "access_token": access_token,
+            "refresh_token": refresh_token_str,
+            "expires_in": settings.JWT_ACCESS_TTL,
+            "roles": role_names,
+        }
+
     async def identify(self, email: str) -> dict:
         result = await self.session.execute(select(User).where(User.email == email))
         user = result.scalar_one_or_none()
 
-        # "email не найден или status='disabled': 200 { error: 'not_found' } -- одинаковый ответ, не раскрываем причину"
+        # "email не найден или status='disabled': 200 { error: 'not_found' }
+        # -- одинаковый ответ, не раскрываем причину"
         if not user or user.status == "disabled":
             return {"error": "not_found"}
 
@@ -56,22 +98,27 @@ class AuthService:
         async with get_redis_client() as redis_client:
             await redis_client.delete(f"auth:attempts:{email}")
 
-        print(f"DEBUG: Auth code for {email} is {code}")
+        logger.debug(
+            "Auth code generated", email=email, code=code if settings.DEBUG else "***"
+        )
 
         if settings.RESEND_API_KEY:
             try:
-                import resend
+                from core.redis import enqueue_send_email
 
-                resend.api_key = settings.RESEND_API_KEY
-                params: resend.Emails.SendParams = {
-                    "from": settings.EMAIL_FROM,
-                    "to": [email],
-                    "subject": "Your Ark Messenger Login Code",
-                    "html": f"<strong>Your login code is: {code}</strong><br>It will expire in 10 minutes.",
-                }
-                resend.Emails.send(params)
+                html_body = (
+                    f"<strong>Your login code is: {code}</strong>"
+                    "<br>It will expire in 10 minutes."
+                )
+                await enqueue_send_email(
+                    to=email,
+                    subject="Your Ark Messenger Login Code",
+                    html=html_body,
+                )
             except Exception as e:
-                print(f"Failed to send email via Resend: {e}")
+                logger.error(
+                    "Failed to enqueue email sending", error=str(e), email=email
+                )
 
         return {"next": "enter_code"}
 
@@ -117,42 +164,11 @@ class AuthService:
             return {"next": "setup_profile", "setup_token": setup_token}
 
         elif user.status == "active":
-            if not user.roles:
-                default_role = await self._get_or_create_default_role()
-                user.roles.append(default_role)
-                await self.session.flush()
-
-            import ulid
-
-            refresh_token_id = str(ulid.ULID())
-            refresh_token_str = create_refresh_token()
-            refresh_token_hash = hash_token(refresh_token_str)
-
-            expires_at = datetime.now(UTC) + timedelta(
-                days=settings.REFRESH_TOKEN_EXPIRE_DAYS
-            )
-            db_refresh_token = RefreshToken(
-                id=refresh_token_id,
-                token_hash=refresh_token_hash,
-                user_id=user.id,
-                expires_at=expires_at,
-            )
-            self.session.add(db_refresh_token)
-
-            role_names = [role.name for role in user.roles]
-            access_token = create_access_token(
-                subject=user.id,
-                roles=role_names,
-                status=user.status,
-                jti=refresh_token_id,
-            )
-
+            token_pair = await self._create_token_pair(user)
             await self.session.commit()
             return {
                 "next": "home",
-                "access_token": access_token,
-                "refresh_token": refresh_token_str,
-                "expires_in": settings.JWT_ACCESS_TTL,
+                **token_pair,
             }
         return None
 
@@ -186,34 +202,9 @@ class AuthService:
 
         await delete_setup_token(setup_token)
 
-        import ulid
-
-        refresh_token_id = str(ulid.ULID())
-        refresh_token_str = create_refresh_token()
-        refresh_token_hash = hash_token(refresh_token_str)
-
-        expires_at = datetime.now(UTC) + timedelta(
-            days=settings.REFRESH_TOKEN_EXPIRE_DAYS
-        )
-        db_refresh_token = RefreshToken(
-            id=refresh_token_id,
-            token_hash=refresh_token_hash,
-            user_id=user.id,
-            expires_at=expires_at,
-        )
-        self.session.add(db_refresh_token)
-
-        role_names = [role.name for role in user.roles]
-        access_token = create_access_token(
-            subject=user.id, roles=role_names, status=user.status, jti=refresh_token_id
-        )
-
+        token_pair = await self._create_token_pair(user)
         await self.session.commit()
-        return {
-            "access_token": access_token,
-            "refresh_token": refresh_token_str,
-            "expires_in": settings.JWT_ACCESS_TTL,
-        }
+        return token_pair
 
     async def refresh_token(self, refresh_token_str: str) -> dict | None:
         token_hash = hash_token(refresh_token_str)
@@ -249,43 +240,8 @@ class AuthService:
 
         await self.session.delete(db_token)
 
-        if not user.roles:
-            default_role = await self._get_or_create_default_role()
-            user.roles.append(default_role)
-            await self.session.flush()
-
-        import ulid
-
-        new_refresh_token_id = str(ulid.ULID())
-        new_refresh_token_str = create_refresh_token()
-        new_refresh_token_hash = hash_token(new_refresh_token_str)
-
-        expires_at = datetime.now(UTC) + timedelta(
-            days=settings.REFRESH_TOKEN_EXPIRE_DAYS
-        )
-        new_db_token = RefreshToken(
-            id=new_refresh_token_id,
-            token_hash=new_refresh_token_hash,
-            user_id=user.id,
-            expires_at=expires_at,
-        )
-        self.session.add(new_db_token)
-
-        role_names = [role.name for role in user.roles]
-        new_access_token = create_access_token(
-            subject=user.id,
-            roles=role_names,
-            status=user.status,
-            jti=new_refresh_token_id,
-        )
-
+        response_data = await self._create_token_pair(user)
         await self.session.commit()
-
-        response_data = {
-            "access_token": new_access_token,
-            "refresh_token": new_refresh_token_str,
-            "expires_in": settings.JWT_ACCESS_TTL,
-        }
 
         # Cache rotation result in Redis for 60 seconds to support parallel requests
         async with get_redis_client() as redis:
@@ -320,7 +276,7 @@ class AuthService:
             from modules.auth.models import WebhookClient
 
             webhooks_result = await self.session.execute(
-                select(WebhookClient).where(WebhookClient.is_active == True)
+                select(WebhookClient).where(WebhookClient.is_active)
             )
             webhooks = webhooks_result.scalars().all()
 

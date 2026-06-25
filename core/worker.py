@@ -123,12 +123,47 @@ async def send_push_notification_task(
         raise e
 
 
+async def send_email_task(
+    ctx: dict[str, Any],
+    to: str,
+    subject: str,
+    html: str,
+) -> None:
+    """
+    Фоновая задача ARQ для асинхронной отправки email через Resend.
+    """
+    if not settings.RESEND_API_KEY:
+        logger.warning("RESEND_API_KEY is not set, email sending skipped", to=to)
+        return
+
+    logger.info("ARQ task: sending email", to=to, subject=subject)
+    try:
+        import resend
+
+        resend.api_key = settings.RESEND_API_KEY
+        params: resend.Emails.SendParams = {
+            "from": settings.EMAIL_FROM,
+            "to": [to],
+            "subject": subject,
+            "html": html,
+        }
+        resend.Emails.send(params)
+        logger.info("Email sent successfully", to=to)
+    except Exception as e:
+        logger.error("Failed to send email in background task", error=str(e), to=to)
+        raise e
+
+
 class WorkerSettings:
     """
     Конфигурация воркера для запуска через arq CLI.
     """
 
-    functions = [send_webhook_revocation, send_push_notification_task]
+    functions = [
+        send_webhook_revocation,
+        send_push_notification_task,
+        send_email_task,
+    ]
     redis_settings = RedisSettings.from_dsn(settings.REDIS_URL)
     on_startup = startup
     on_shutdown = shutdown

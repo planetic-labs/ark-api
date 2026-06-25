@@ -8,7 +8,7 @@ services:
     networks:
       - planetic-net
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     volumes:
       # Прокидываем код бэкенда для авторелоада (Hot Reload)
       - .:/app
@@ -22,8 +22,10 @@ services:
       - UV_LINK_MODE=copy
       - UV_NO_SYNC=1
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     command: ["uv", "run", "fastapi", "dev", "main.py", "--host", "0.0.0.0"]
 
   # База данных
@@ -42,6 +44,11 @@ services:
       - "127.0.0.1:5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ark"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   # Redis (для pub/sub и кэша)
   redis:
@@ -52,6 +59,11 @@ services:
       - "127.0.0.1:6379:6379"
     volumes:
       - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   # Воркер фоновых задач ARQ
   worker:
@@ -73,8 +85,10 @@ services:
       - UV_LINK_MODE=copy
       - UV_NO_SYNC=1
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     command: ["uv", "run", "arq", "core.worker.WorkerSettings"]
 
 volumes:

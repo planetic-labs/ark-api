@@ -5,6 +5,7 @@ from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from modules.messaging.exceptions import ChatAccessDeniedError
 from modules.messaging.models import Chat, Message, chat_members
 from modules.messaging.schemas import (
     ChatCreateSchema,
@@ -166,7 +167,7 @@ class MessagingService:
             )
         )
         if not membership.first():
-            raise Exception("User not in chat")
+            raise ChatAccessDeniedError()
 
         message = Message(
             content=body.content,
@@ -237,7 +238,7 @@ class MessagingService:
             )
         )
         if not membership.first():
-            raise Exception("User not in chat")
+            raise ChatAccessDeniedError()
 
         result = await self.session.execute(
             select(Message)

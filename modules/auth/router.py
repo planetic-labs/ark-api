@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import get_session
@@ -76,7 +77,7 @@ async def refresh_token(
     return tokens
 
 
-from fastapi.security import OAuth2PasswordBearer
+
 
 oauth2_scheme_optional = OAuth2PasswordBearer(
     tokenUrl="/api/v1/auth/verify-code", auto_error=False
@@ -93,7 +94,7 @@ async def logout(
     if token:
         try:
             payload = decode_token(token)
-            jti = payload.get("jti")
+            jti = payload.jti
         except Exception:
             pass
 
