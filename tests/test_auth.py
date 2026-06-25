@@ -415,7 +415,8 @@ async def test_approved_user_restriction(client, db):
     assert response.status_code == 403
     assert response.json()["detail"] == "User account not approved by administrator"
 
-    # Access /api/v1/users/me -> 200 OK (unapproved users can view their own profile/status)
+    # Access /api/v1/users/me -> 200 OK
+    # (unapproved users can view their own profile/status)
     response = await client.get(
         "/api/v1/users/me", headers={"Authorization": f"Bearer {token}"}
     )

@@ -8,7 +8,7 @@ import sys
 
 def get_current_date() -> str:
     """Returns current date formatted as YYYY.MM.DD."""
-    return datetime.datetime.now().strftime("%Y.%m.%d")
+    return datetime.datetime.now(datetime.UTC).strftime("%Y.%m.%d")
 
 
 def run_git_command(args: list[str]) -> str:
@@ -199,7 +199,8 @@ def main():
 
     if not args.allow_dirty and not is_git_clean():
         print(
-            "Error: Git working tree is dirty. Commit or stash your changes, or use --allow-dirty.",
+            "Error: Git working tree is dirty. "
+            "Commit or stash your changes, or use --allow-dirty.",
             file=sys.stderr,
         )
         sys.exit(1)
@@ -225,7 +226,8 @@ def main():
         try:
             user_input = (
                 input(
-                    f"Do you want to push tag '{next_version}' and create GitHub release? [y/N]: "
+                    f"Do you want to push tag '{next_version}' "
+                    "and create GitHub release? [y/N]: "
                 )
                 .strip()
                 .lower()
@@ -235,7 +237,8 @@ def main():
                 create_github_release(next_version, changelog, args.dry_run)
             else:
                 print(
-                    f"Tag was not pushed. You can push it manually: git push origin {next_version}"
+                    "Tag was not pushed. You can push it manually: "
+                    f"git push origin {next_version}"
                 )
         except KeyboardInterrupt:
             print("\nAborted pushing. Tag was created locally.")

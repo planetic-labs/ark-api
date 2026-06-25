@@ -37,10 +37,13 @@ def upgrade() -> None:
 
     # Migrate existing data from 'name' to first_name and last_name
     op.execute(
-        "UPDATE users SET first_name = split_part(name, ' ', 1), last_name = SUBSTRING(name FROM POSITION(' ' IN name) + 1) WHERE POSITION(' ' IN name) > 0"
+        "UPDATE users SET first_name = split_part(name, ' ', 1), "
+        "last_name = SUBSTRING(name FROM POSITION(' ' IN name) + 1) "
+        "WHERE POSITION(' ' IN name) > 0"
     )
     op.execute(
-        "UPDATE users SET first_name = name, last_name = '' WHERE POSITION(' ' IN name) = 0"
+        "UPDATE users SET first_name = name, last_name = '' "
+        "WHERE POSITION(' ' IN name) = 0"
     )
 
     # Drop the original name column

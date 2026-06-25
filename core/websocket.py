@@ -42,8 +42,6 @@ class ConnectionManager:
 manager = ConnectionManager()
 
 
-
-
 MAX_RECONNECT_DELAY = 60
 INITIAL_RECONNECT_DELAY = 1
 

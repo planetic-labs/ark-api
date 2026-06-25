@@ -77,8 +77,6 @@ async def refresh_token(
     return tokens
 
 
-
-
 oauth2_scheme_optional = OAuth2PasswordBearer(
     tokenUrl="/api/v1/auth/verify-code", auto_error=False
 )

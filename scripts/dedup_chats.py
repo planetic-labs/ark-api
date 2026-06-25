@@ -11,7 +11,7 @@ async def main():
         # 1. Clean up duplicate group chats
         # Get all group chats ordered by creation date
         result = await session.execute(
-            select(Chat).where(Chat.is_group == True).order_by(Chat.created_at.asc())
+            select(Chat).where(Chat.is_group).order_by(Chat.created_at.asc())
         )
         chats = result.scalars().all()
 
