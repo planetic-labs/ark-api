@@ -1,7 +1,7 @@
 import asyncio
 import json
 
-from sqlalchemy import and_, func, select
+from sqlalchemy import and_, func, select, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -78,14 +78,54 @@ class MessagingService:
         if added_any:
             await self.session.commit()
 
-        # 4. Return all chats the user is now a member of
+        # 4. Fetch chat IDs with their last active time (most recent first)
+        stmt = (
+            select(
+                Chat.id,
+                func.coalesce(func.max(Message.created_at), Chat.created_at).label("last_active")
+            )
+            .join(chat_members, Chat.id == chat_members.c.chat_id)
+            .outerjoin(Message, Chat.id == Message.chat_id)
+            .where(chat_members.c.user_id == user_id)
+            .group_by(Chat.id, Chat.created_at)
+            .order_by(desc("last_active"))
+        )
+        ordered_ids_result = await self.session.execute(stmt)
+        ordered_ids = [row[0] for row in ordered_ids_result.all()]
+
+        if not ordered_ids:
+            return []
+
+        # Fetch the Chat objects with selectinload(Chat.members)
         result = await self.session.execute(
             select(Chat)
-            .join(chat_members)
-            .where(chat_members.c.user_id == user_id)
+            .where(Chat.id.in_(ordered_ids))
             .options(selectinload(Chat.members))
         )
-        return list(result.scalars().all())
+        chats_dict = {c.id: c for c in result.scalars().all()}
+        chats = [chats_dict[cid] for cid in ordered_ids if cid in chats_dict]
+
+        # Fetch the latest message for each chat to populate last_message
+        last_messages = {}
+        subq = (
+            select(Message.chat_id, func.max(Message.created_at).label("max_date"))
+            .where(Message.chat_id.in_(ordered_ids))
+            .group_by(Message.chat_id)
+            .subquery()
+        )
+        stmt_msgs = (
+            select(Message)
+            .join(subq, and_(Message.chat_id == subq.c.chat_id, Message.created_at == subq.c.max_date))
+            .options(selectinload(Message.sender))
+        )
+        msgs_result = await self.session.execute(stmt_msgs)
+        for m in msgs_result.scalars().all():
+            last_messages[m.chat_id] = m
+
+        for chat in chats:
+            chat.last_message = last_messages.get(chat.id)
+
+        return chats
 
     async def _broadcast_message(
         self, message: Message, chat_id: str, session: AsyncSession
