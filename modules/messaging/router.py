@@ -1,5 +1,7 @@
 import structlog
-from fastapi import APIRouter, Depends
+import os
+import uuid
+from fastapi import APIRouter, Depends, UploadFile, File
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import get_session
@@ -8,6 +10,7 @@ from modules.messaging.schemas import (
     ChatSchema,
     MessageCreateSchema,
     MessageSchema,
+    MessageReceiptUpdateSchema,
 )
 from modules.messaging.service import MessagingService
 from modules.users.dependencies import require_approved_user
@@ -57,3 +60,30 @@ async def get_messages(
     service: MessagingService = Depends(get_messaging_service),
 ):
     return await service.get_chat_messages(chat_id, current_user.id)
+
+
+@router.post("/attachments/upload")
+async def upload_attachment(
+    file: UploadFile = File(...),
+    current_user: User = Depends(require_approved_user),
+):
+    os.makedirs("static/uploads", exist_ok=True)
+    ext = os.path.splitext(file.filename)[1] if file.filename else ""
+    filename = f"{uuid.uuid4()}{ext}"
+    filepath = os.path.join("static/uploads", filename)
+
+    with open(filepath, "wb") as f:
+        content = await file.read()
+        f.write(content)
+
+    return {"file_url": f"/static/uploads/{filename}"}
+
+
+@router.post("/messages/receipts")
+async def update_message_receipts(
+    body: MessageReceiptUpdateSchema,
+    current_user: User = Depends(require_approved_user),
+    service: MessagingService = Depends(get_messaging_service),
+):
+    await service.update_message_receipts(body.message_ids, current_user.id, body.status)
+    return {"message": "Receipts updated successfully"}

@@ -61,6 +61,12 @@ class Message(Base):
     # because of table partitioning)
     parent_id: Mapped[str | None] = mapped_column(String(26), nullable=True)
 
+    # Media fields
+    message_type: Mapped[str] = mapped_column(String(50), server_default="text")
+    file_url: Mapped[str | None] = mapped_column(String(1024), nullable=True)
+    duration: Mapped[int | None] = mapped_column(nullable=True)
+    sticker_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
+
     # Relationships
     chat: Mapped[Chat] = relationship(back_populates="messages")
     sender: Mapped[User] = relationship()
@@ -78,3 +84,21 @@ class Message(Base):
 
     def __repr__(self) -> str:
         return f"<Message {self.id[:8]} from {self.sender_id}>"
+
+
+class MessageReceipt(Base):
+    __tablename__ = "message_receipts"
+
+    message_id: Mapped[str] = mapped_column(
+        String(26),
+        primary_key=True,
+    )
+    user_id: Mapped[str] = mapped_column(
+        String(26),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    status: Mapped[str] = mapped_column(String(50), default="delivered")  # delivered, read
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )

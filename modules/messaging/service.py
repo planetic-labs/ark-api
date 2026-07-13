@@ -124,6 +124,10 @@ class MessagingService:
 
         for chat in chats:
             chat.last_message = last_messages.get(chat.id)
+            if chat.last_message:
+                chat.last_message.status = await self._get_message_aggregated_status(
+                    chat.last_message.id, chat.last_message.sender_id, chat.id
+                )
 
         return chats
 
@@ -214,10 +218,16 @@ class MessagingService:
             chat_id=body.chat_id,
             sender_id=sender_id,
             parent_id=body.parent_id,
+            message_type=body.message_type,
+            file_url=body.file_url,
+            duration=body.duration,
+            sticker_id=body.sticker_id,
         )
         self.session.add(message)
         await self.session.commit()
         await self.session.refresh(message, ["sender"])
+
+        message.status = "sent"
 
         # Broadcast via Redis
         await self._broadcast_message(message, body.chat_id, self.session)
@@ -289,4 +299,82 @@ class MessagingService:
         )
         messages = list(result.scalars().all())
         messages.reverse()
+
+        for msg in messages:
+            msg.status = await self._get_message_aggregated_status(msg.id, msg.sender_id, msg.chat_id)
+
         return messages
+
+    async def _get_message_aggregated_status(self, message_id: str, sender_id: str, chat_id: str) -> str:
+        from modules.messaging.models import MessageReceipt
+
+        receipts_result = await self.session.execute(
+            select(MessageReceipt).where(MessageReceipt.message_id == message_id)
+        )
+        receipts = receipts_result.scalars().all()
+
+        if not receipts:
+            return "sent"
+
+        other_receipts = [r for r in receipts if r.user_id != sender_id]
+
+        if not other_receipts:
+            return "sent"
+
+        if any(r.status == "read" for r in other_receipts):
+            return "read"
+
+        if any(r.status == "delivered" for r in other_receipts):
+            return "delivered"
+
+        return "sent"
+
+    async def update_message_receipts(
+        self, message_ids: list[str], user_id: str, status: str
+    ):
+        if not message_ids:
+            return
+
+        from sqlalchemy.dialects.postgresql import insert
+        from modules.messaging.models import MessageReceipt
+
+        for msg_id in message_ids:
+            stmt = (
+                insert(MessageReceipt)
+                .values(message_id=msg_id, user_id=user_id, status=status)
+                .on_conflict_do_update(
+                    index_elements=["message_id", "user_id"],
+                    set_={"status": status}
+                )
+            )
+            await self.session.execute(stmt)
+        await self.session.commit()
+
+        msgs_result = await self.session.execute(
+            select(Message).where(Message.id.in_(message_ids))
+        )
+        messages = msgs_result.scalars().all()
+
+        from core.redis import get_redis_client
+        async with get_redis_client() as client:
+            for msg in messages:
+                members_result = await self.session.execute(
+                    select(chat_members.c.user_id).where(chat_members.c.chat_id == msg.chat_id)
+                )
+                target_user_ids = [str(r[0]) for r in members_result.all()]
+
+                agg_status = await self._get_message_aggregated_status(msg.id, msg.sender_id, msg.chat_id)
+
+                event = {
+                    "type": "message.receipt_updated",
+                    "target_user_ids": target_user_ids,
+                    "payload": {
+                        "type": "message.receipt_updated",
+                        "data": {
+                            "message_id": msg.id,
+                            "chat_id": msg.chat_id,
+                            "status": agg_status
+                        }
+                    }
+                }
+                await client.publish("chat_events", json.dumps(event))
