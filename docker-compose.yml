@@ -5,10 +5,11 @@ services:
       context: .
       dockerfile: infra/api.Dockerfile
     user: "${CURRENT_UID:-1000}:${CURRENT_GID:-1000}"
+    restart: unless-stopped
     networks:
       - planetic-net
     ports:
-      - "127.0.0.1:8000:8000"
+      - "127.0.0.1:8355:8000"
     volumes:
       # Прокидываем код бэкенда для авторелоада (Hot Reload)
       - .:/app
@@ -35,6 +36,7 @@ services:
       context: .
       dockerfile: infra/postgres.Dockerfile
     command: ["postgres", "-c", "shared_preload_libraries=pg_partman_bgw", "-c", "pg_partman_bgw.dbname=ark", "-c", "pg_partman_bgw.role=postgres"]
+    restart: unless-stopped
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
@@ -54,6 +56,7 @@ services:
   # Redis (для pub/sub и кэша)
   redis:
     image: redis:7-alpine
+    restart: unless-stopped
     networks:
       - planetic-net
     ports:
@@ -72,6 +75,7 @@ services:
       context: .
       dockerfile: infra/api.Dockerfile
     user: "${CURRENT_UID:-1000}:${CURRENT_GID:-1000}"
+    restart: unless-stopped
     networks:
       - planetic-net
     volumes:

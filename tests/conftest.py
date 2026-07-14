@@ -92,6 +92,7 @@ async def setup_test_database():
     from modules.users.models import Permission, Role, ServiceClient, User  # noqa: F401
 
     async with test_engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
     yield
 

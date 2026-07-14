@@ -1,7 +1,7 @@
 import asyncio
 import json
 
-from sqlalchemy import and_, func, select, desc
+from sqlalchemy import and_, desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -37,7 +37,13 @@ class MessagingService:
             result = await self.session.execute(stmt)
             existing_chat = result.scalar_one_or_none()
             if existing_chat:
-                return existing_chat
+                stmt_existing = (
+                    select(Chat)
+                    .where(Chat.id == existing_chat.id)
+                    .options(selectinload(Chat.members))
+                )
+                res_existing = await self.session.execute(stmt_existing)
+                return res_existing.scalar_one()
 
         chat = Chat(name=body.name, is_group=body.is_group)
         self.session.add(chat)
@@ -50,8 +56,12 @@ class MessagingService:
             )
 
         await self.session.commit()
-        await self.session.refresh(chat)
-        return chat
+
+        stmt_loaded = (
+            select(Chat).where(Chat.id == chat.id).options(selectinload(Chat.members))
+        )
+        res_loaded = await self.session.execute(stmt_loaded)
+        return res_loaded.scalar_one()
 
     async def get_user_chats(self, user_id: str) -> list[Chat]:
         # 1. Fetch all group chats
@@ -82,7 +92,9 @@ class MessagingService:
         stmt = (
             select(
                 Chat.id,
-                func.coalesce(func.max(Message.created_at), Chat.created_at).label("last_active")
+                func.coalesce(func.max(Message.created_at), Chat.created_at).label(
+                    "last_active"
+                ),
             )
             .join(chat_members, Chat.id == chat_members.c.chat_id)
             .outerjoin(Message, Chat.id == Message.chat_id)
@@ -115,7 +127,13 @@ class MessagingService:
         )
         stmt_msgs = (
             select(Message)
-            .join(subq, and_(Message.chat_id == subq.c.chat_id, Message.created_at == subq.c.max_date))
+            .join(
+                subq,
+                and_(
+                    Message.chat_id == subq.c.chat_id,
+                    Message.created_at == subq.c.max_date,
+                ),
+            )
             .options(selectinload(Message.sender))
         )
         msgs_result = await self.session.execute(stmt_msgs)
@@ -301,11 +319,15 @@ class MessagingService:
         messages.reverse()
 
         for msg in messages:
-            msg.status = await self._get_message_aggregated_status(msg.id, msg.sender_id, msg.chat_id)
+            msg.status = await self._get_message_aggregated_status(
+                msg.id, msg.sender_id, msg.chat_id
+            )
 
         return messages
 
-    async def _get_message_aggregated_status(self, message_id: str, sender_id: str, chat_id: str) -> str:
+    async def _get_message_aggregated_status(
+        self, message_id: str, sender_id: str, chat_id: str
+    ) -> str:
         from modules.messaging.models import MessageReceipt
 
         receipts_result = await self.session.execute(
@@ -336,6 +358,7 @@ class MessagingService:
             return
 
         from sqlalchemy.dialects.postgresql import insert
+
         from modules.messaging.models import MessageReceipt
 
         for msg_id in message_ids:
@@ -343,8 +366,7 @@ class MessagingService:
                 insert(MessageReceipt)
                 .values(message_id=msg_id, user_id=user_id, status=status)
                 .on_conflict_do_update(
-                    index_elements=["message_id", "user_id"],
-                    set_={"status": status}
+                    index_elements=["message_id", "user_id"], set_={"status": status}
                 )
             )
             await self.session.execute(stmt)
@@ -356,14 +378,19 @@ class MessagingService:
         messages = msgs_result.scalars().all()
 
         from core.redis import get_redis_client
+
         async with get_redis_client() as client:
             for msg in messages:
                 members_result = await self.session.execute(
-                    select(chat_members.c.user_id).where(chat_members.c.chat_id == msg.chat_id)
+                    select(chat_members.c.user_id).where(
+                        chat_members.c.chat_id == msg.chat_id
+                    )
                 )
                 target_user_ids = [str(r[0]) for r in members_result.all()]
 
-                agg_status = await self._get_message_aggregated_status(msg.id, msg.sender_id, msg.chat_id)
+                agg_status = await self._get_message_aggregated_status(
+                    msg.id, msg.sender_id, msg.chat_id
+                )
 
                 event = {
                     "type": "message.receipt_updated",
@@ -373,8 +400,8 @@ class MessagingService:
                         "data": {
                             "message_id": msg.id,
                             "chat_id": msg.chat_id,
-                            "status": agg_status
-                        }
-                    }
+                            "status": agg_status,
+                        },
+                    },
                 }
                 await client.publish("chat_events", json.dumps(event))
