@@ -75,7 +75,7 @@ services:
         max-file: "5"
 
   redis:
-    image: redis:7-alpine
+    image: redis:8-alpine
     restart: always
     stop_grace_period: 30s
     ports:
@@ -122,7 +122,7 @@ services:
     depends_on:
       api:
         condition: service_healthy
-    command: ["uv", "run", "arq", "core.worker.WorkerSettings"]
+    command: ["uv", "run", "saq", "core.worker.worker_settings"]
     logging:
       driver: "json-file"
       options:

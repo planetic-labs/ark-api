@@ -5,9 +5,9 @@ from typing import Any
 
 import httpx
 import structlog
-from arq.connections import RedisSettings
 
 from core.config import settings
+from core.redis import task_queue
 
 logger = structlog.get_logger()
 
@@ -56,7 +56,7 @@ async def send_webhook_revocation(
             status_code=e.response.status_code,
             error=str(e),
         )
-        # Возбуждаем исключение, чтобы arq выполнил retry задачи
+        # Возбуждаем исключение, чтобы SAQ выполнил retry задачи
         raise e
     except httpx.RequestError as e:
         logger.error(
@@ -76,7 +76,7 @@ async def startup(ctx: dict[str, Any]) -> None:
     from modules.users.models import Permission, Role, ServiceClient, User  # noqa: F401
 
     ctx["http_client"] = httpx.AsyncClient(timeout=10.0)
-    logger.info("ARQ worker started")
+    logger.info("SAQ worker started")
 
 
 async def shutdown(ctx: dict[str, Any]) -> None:
@@ -86,7 +86,7 @@ async def shutdown(ctx: dict[str, Any]) -> None:
     client: httpx.AsyncClient | None = ctx.get("http_client")
     if client:
         await client.aclose()
-    logger.info("ARQ worker stopped")
+    logger.info("SAQ worker stopped")
 
 
 async def send_push_notification_task(
@@ -99,12 +99,12 @@ async def send_push_notification_task(
     data: dict[str, str] | None = None,
 ) -> None:
     """
-    Фоновая задача ARQ для асинхронной отправки push-уведомлений через Expo Push API.
+    Фоновая задача SAQ для асинхронной отправки push-уведомлений через Expo Push API.
     """
     from core.database import AsyncSessionLocal
     from modules.notifications.service import send_push_notifications
 
-    logger.info("ARQ task: sending push notifications", user_ids=user_ids, title=title)
+    logger.info("SAQ task: sending push notifications", user_ids=user_ids, title=title)
     try:
         async with AsyncSessionLocal() as session:
             await send_push_notifications(
@@ -130,13 +130,13 @@ async def send_email_task(
     html: str,
 ) -> None:
     """
-    Фоновая задача ARQ для асинхронной отправки email через Resend.
+    Фоновая задача SAQ для асинхронной отправки email через Resend.
     """
     if not settings.RESEND_API_KEY:
         logger.warning("RESEND_API_KEY is not set, email sending skipped", to=to)
         return
 
-    logger.info("ARQ task: sending email", to=to, subject=subject)
+    logger.info("SAQ task: sending email", to=to, subject=subject)
     try:
         import resend
 
@@ -154,16 +154,14 @@ async def send_email_task(
         raise e
 
 
-class WorkerSettings:
-    """
-    Конфигурация воркера для запуска через arq CLI.
-    """
-
-    functions = [
+worker_settings = {
+    "queue": task_queue,
+    "functions": [
         send_webhook_revocation,
         send_push_notification_task,
         send_email_task,
-    ]
-    redis_settings = RedisSettings.from_dsn(settings.REDIS_URL)
-    on_startup = startup
-    on_shutdown = shutdown
+    ],
+    "startup": startup,
+    "shutdown": shutdown,
+    "shutdown_grace_period_s": 30,
+}
