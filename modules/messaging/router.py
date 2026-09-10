@@ -1,7 +1,8 @@
-import structlog
 import os
 import uuid
-from fastapi import APIRouter, Depends, UploadFile, File
+
+import structlog
+from fastapi import APIRouter, Depends, File, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import get_session
@@ -9,8 +10,8 @@ from modules.messaging.schemas import (
     ChatCreateSchema,
     ChatSchema,
     MessageCreateSchema,
-    MessageSchema,
     MessageReceiptUpdateSchema,
+    MessageSchema,
 )
 from modules.messaging.service import MessagingService
 from modules.users.dependencies import require_approved_user
@@ -85,5 +86,7 @@ async def update_message_receipts(
     current_user: User = Depends(require_approved_user),
     service: MessagingService = Depends(get_messaging_service),
 ):
-    await service.update_message_receipts(body.message_ids, current_user.id, body.status)
+    await service.update_message_receipts(
+        body.message_ids, current_user.id, body.status
+    )
     return {"message": "Receipts updated successfully"}

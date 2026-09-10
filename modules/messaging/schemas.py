@@ -1,5 +1,7 @@
 from datetime import datetime
+
 from pydantic import BaseModel, ConfigDict, Field
+
 from modules.users.schemas import UserSchema
 
 
