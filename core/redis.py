@@ -1,4 +1,5 @@
 import redis.asyncio as redis
+from saq.queue.redis import RedisQueue
 
 from core.config import settings
 
@@ -46,25 +47,24 @@ async def delete_setup_token(token_id: str) -> None:
         await client.delete(key)
 
 
-_arq_pool = None
+task_queue = RedisQueue.from_url(settings.REDIS_URL, name="ark")
 
 
-async def get_arq_pool():
-    global _arq_pool
-    if _arq_pool is None:
-        from arq import create_pool
-        from arq.connections import RedisSettings
-
-        redis_settings = RedisSettings.from_dsn(settings.REDIS_URL)
-        _arq_pool = await create_pool(redis_settings)
-    return _arq_pool
+async def enqueue_task(function: str, **kwargs) -> None:
+    await task_queue.enqueue(
+        function,
+        timeout=300,
+        retries=5,
+        retry_delay=1,
+        retry_backoff=True,
+        **kwargs,
+    )
 
 
 async def enqueue_revocation_webhook(
     user_id: str, jti: str | None, webhook_url: str, webhook_secret: str
 ) -> None:
-    pool = await get_arq_pool()
-    await pool.enqueue_job(
+    await enqueue_task(
         "send_webhook_revocation",
         user_id=user_id,
         jti=jti,
@@ -81,8 +81,7 @@ async def enqueue_push_notification(
     channel_id: str | None = None,
     data: dict[str, str] | None = None,
 ) -> None:
-    pool = await get_arq_pool()
-    await pool.enqueue_job(
+    await enqueue_task(
         "send_push_notification_task",
         user_ids=user_ids,
         title=title,
@@ -98,8 +97,7 @@ async def enqueue_send_email(
     subject: str,
     html: str,
 ) -> None:
-    pool = await get_arq_pool()
-    await pool.enqueue_job(
+    await enqueue_task(
         "send_email_task",
         to=to,
         subject=subject,
