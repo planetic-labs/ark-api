@@ -98,7 +98,9 @@ class MessageReceipt(Base):
         ForeignKey("users.id", ondelete="CASCADE"),
         primary_key=True,
     )
-    status: Mapped[str] = mapped_column(String(50), default="delivered")  # delivered, read
+    status: Mapped[str] = mapped_column(
+        String(50), default="delivered"
+    )  # delivered, read
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )

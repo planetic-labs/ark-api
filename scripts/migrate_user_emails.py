@@ -24,7 +24,10 @@ def parse_args() -> argparse.Namespace:
     export = commands.add_parser("export", help="Export active user emails to JSON.")
     export.add_argument(
         "--source-database-url",
-        help="PostgreSQL URL of the database to read from (default: DATABASE_URL in .env).",
+        help=(
+            "PostgreSQL URL of the database to read from "
+            "(default: DATABASE_URL in .env)."
+        ),
     )
     export.add_argument("--output", type=Path, required=True, help="Output JSON file.")
 
@@ -32,7 +35,10 @@ def parse_args() -> argparse.Namespace:
     import_.add_argument("--input", type=Path, required=True, help="Input JSON file.")
     import_.add_argument(
         "--target-database-url",
-        help="PostgreSQL URL of the database to write to (default: DATABASE_URL in .env).",
+        help=(
+            "PostgreSQL URL of the database to write to "
+            "(default: DATABASE_URL in .env)."
+        ),
     )
     import_.add_argument(
         "--role",
@@ -65,7 +71,9 @@ def database_url(url: str, option: str) -> str:
     credentials, _, host = parsed.netloc.rpartition("@")
     host = host.replace("db", "127.0.0.1", 1)
     netloc = f"{credentials}@{host}" if credentials else host
-    return urlunsplit((parsed.scheme, netloc, parsed.path, parsed.query, parsed.fragment))
+    return urlunsplit(
+        (parsed.scheme, netloc, parsed.path, parsed.query, parsed.fragment)
+    )
 
 
 def env_file_path() -> Path:
@@ -245,7 +253,9 @@ async def main() -> int:
     try:
         import asyncpg
     except ImportError:
-        print("Install dependency first: python3 -m pip install asyncpg", file=sys.stderr)
+        print(
+            "Install dependency first: python3 -m pip install asyncpg", file=sys.stderr
+        )
         return 1
 
     try:
