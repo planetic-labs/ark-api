@@ -44,7 +44,10 @@ class Settings(BaseSettings):
     def allowed_origins_list(self) -> list[str]:
         return [x.strip() for x in self.ALLOWED_ORIGINS.split(",") if x.strip()]
 
-    model_config = SettingsConfigDict(env_file=".env", case_sensitive=True)
+    # The shared .env also contains settings for storage and backup tools.
+    model_config = SettingsConfigDict(
+        env_file=".env", case_sensitive=True, extra="ignore"
+    )
 
 
 settings = Settings()
