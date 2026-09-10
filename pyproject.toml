@@ -4,7 +4,7 @@ version = "2026.5.23"
 description = "Backend for Ark Messenger"
 requires-python = ">=3.14,<3.15"
 dependencies = [
-    "fastapi[standard]>=0.139.2",
+    "fastapi[standard]>=0.141.1",
     "sqlalchemy[asyncio]>=2.0.51",
     "asyncpg>=0.31.0",
     "pydantic[email]>=2.13.4",
@@ -14,7 +14,7 @@ dependencies = [
     "structlog>=26.1.0",
     "python-multipart>=0.0.32",
     "alembic>=1.19.2",
-    "pydantic-settings>=2.14.2",
+    "pydantic-settings>=2.15.0",
     "pyjwt[crypto]>=2.13.0",
     "resend>=2.34.0",
 ]
@@ -51,6 +51,6 @@ dev = [
     "httpx>=0.28.1",
     "pytest>=9.1.1",
     "pytest-asyncio>=1.4.0",
-    "ruff>=0.15.22",
+    "ruff>=0.16.5",
     "testcontainers[postgres]>=4.14.2",
 ]
