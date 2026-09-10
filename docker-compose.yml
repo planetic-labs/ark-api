@@ -33,7 +33,7 @@ services:
       redis:
         condition: service_healthy
     command:
-      ["sh", "-c", "uv sync --frozen --no-dev && uv run alembic upgrade head && exec uv run fastapi dev main.py --host 0.0.0.0"]
+      ["sh", "-c", "uv sync --frozen --no-dev && uv run --no-sync alembic upgrade head && exec uv run --no-sync fastapi dev main.py --host 0.0.0.0"]
     healthcheck:
       test:
         ["CMD", "python", "-c", "from urllib.request import urlopen; urlopen('http://localhost:8000/health').close()"]
@@ -121,7 +121,7 @@ services:
       api:
         condition: service_healthy
     command:
-      ["sh", "-c", "uv sync --frozen --no-dev && exec uv run saq core.worker.worker_settings"]
+      ["sh", "-c", "uv sync --frozen --no-dev && exec uv run --no-sync saq core.worker.worker_settings"]
     logging:
       driver: "json-file"
       options:
