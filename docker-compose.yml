@@ -27,14 +27,13 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - UV_CACHE_DIR=/tmp/uv-cache
       - UV_LINK_MODE=copy
-      - UV_NO_SYNC=1
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_healthy
     command:
-      ["sh", "-c", "uv run alembic upgrade head && exec uv run fastapi dev main.py --host 0.0.0.0"]
+      ["sh", "-c", "uv sync --frozen --no-dev && uv run alembic upgrade head && exec uv run fastapi dev main.py --host 0.0.0.0"]
     healthcheck:
       test:
         ["CMD", "python", "-c", "from urllib.request import urlopen; urlopen('http://localhost:8000/health').close()"]
@@ -118,11 +117,11 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - UV_CACHE_DIR=/tmp/uv-cache
       - UV_LINK_MODE=copy
-      - UV_NO_SYNC=1
     depends_on:
       api:
         condition: service_healthy
-    command: ["uv", "run", "saq", "core.worker.worker_settings"]
+    command:
+      ["sh", "-c", "uv sync --frozen --no-dev && exec uv run saq core.worker.worker_settings"]
     logging:
       driver: "json-file"
       options:
