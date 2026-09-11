@@ -48,7 +48,7 @@ wheels = [
 
 [[package]]
 name = "ark-api"
-version = "2026.5.23"
+version = "2026.9.11"
 source = { virtual = "." }
 dependencies = [
     { name = "alembic" },
