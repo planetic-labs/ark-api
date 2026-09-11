@@ -60,23 +60,45 @@ fi
 RESTORE_DIR="$(mktemp -d "$PROJECT_ROOT/tmp/restic-restore.XXXXXX")"
 DUMP_PATH="$RESTORE_DIR$PROJECT_ROOT/tmp/restic-backup/ark.postgres.dump"
 UPLOADS_PATH="$RESTORE_DIR$PROJECT_ROOT/tmp/restic-backup/uploads"
+REDIS_DUMP_PATH="$RESTORE_DIR$PROJECT_ROOT/tmp/restic-backup/redis/dump.rdb"
 SERVICES_STOPPED=0
 
 restart_services() {
     if [[ "$SERVICES_STOPPED" -eq 1 ]]; then
-        "${compose[@]}" up -d api worker >/dev/null || true
+        "${compose[@]}" up -d redis api worker >/dev/null || true
     fi
 }
 trap restart_services EXIT
 
 echo "Available Ark snapshots:"
-restic snapshots --tag ark-api
+restic snapshots --host ark-api-dev --tag ark-api
 echo "Restoring snapshot '$SNAPSHOT' into $RESTORE_DIR..."
-restic restore "$SNAPSHOT" --target "$RESTORE_DIR"
+if [[ "$SNAPSHOT" == "latest" ]]; then
+    restic restore latest \
+        --host ark-api-dev \
+        --tag ark-api \
+        --target "$RESTORE_DIR"
+else
+    snapshot_json="$(restic snapshots \
+        --json \
+        --host ark-api-dev \
+        --tag ark-api \
+        "$SNAPSHOT")"
+    if ! python3 -c \
+        'import json, sys; snapshots = json.load(sys.stdin); raise SystemExit(len(snapshots) != 1)' \
+        <<< "$snapshot_json"; then
+        echo "ERROR: '$SNAPSHOT' is not exactly one Ark snapshot." >&2
+        exit 1
+    fi
+    restic restore "$SNAPSHOT" --target "$RESTORE_DIR"
+fi
 
 if [[ ! -s "$DUMP_PATH" || ! -d "$UPLOADS_PATH" ]]; then
-    echo "ERROR: Snapshot is incomplete; PostgreSQL dump and uploads are required." >&2
+    echo "ERROR: Snapshot is incomplete; PostgreSQL and uploads are required." >&2
     exit 1
+fi
+if [[ ! -s "$REDIS_DUMP_PATH" ]]; then
+    echo "WARNING: This legacy snapshot has no Redis dump; existing Redis data will be kept."
 fi
 pg_restore --list "$DUMP_PATH" >/dev/null
 echo "Snapshot preflight passed. No live data has been changed."
@@ -95,8 +117,8 @@ fi
 
 POSTGRES_USER="${POSTGRES_USER:-postgres}"
 POSTGRES_DB="${POSTGRES_DB:-ark}"
-echo "Stopping API and worker..."
-"${compose[@]}" stop api worker >/dev/null
+echo "Stopping API, worker, and Redis..."
+"${compose[@]}" stop api worker redis >/dev/null
 SERVICES_STOPPED=1
 
 echo "Restoring PostgreSQL database..."
@@ -109,6 +131,18 @@ echo "Restoring uploads volume..."
     -v "$UPLOADS_PATH:/restore:ro" \
     --entrypoint sh api \
     -c 'find /app/static/uploads -mindepth 1 -delete && cp -a /restore/. /app/static/uploads/'
+
+if [[ -s "$REDIS_DUMP_PATH" ]]; then
+    echo "Restoring Redis data..."
+    "${compose[@]}" run --rm --no-deps \
+        --user root \
+        -v "$REDIS_DUMP_PATH:/restore/dump.rdb:ro" \
+        --entrypoint sh redis \
+        -c 'find /data -mindepth 1 -delete && cp /restore/dump.rdb /data/dump.rdb && chown redis:redis /data/dump.rdb'
+fi
+
+echo "Starting Redis..."
+"${compose[@]}" up -d redis
 
 echo "Starting API and worker..."
 "${compose[@]}" up -d api worker
