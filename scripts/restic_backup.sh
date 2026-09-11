@@ -7,6 +7,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 WORK_DIR="$PROJECT_ROOT/tmp/restic-backup"
 DUMP_PATH="$WORK_DIR/ark.postgres.dump"
+REDIS_DUMP_PATH="$WORK_DIR/redis/dump.rdb"
 UPLOADS_PATH="$WORK_DIR/uploads"
 LOG_DIR="$PROJECT_ROOT/logs"
 
@@ -57,9 +58,10 @@ cleanup() {
 trap cleanup EXIT
 
 echo "[$(date --iso-8601=seconds)] Starting Ark Restic backup"
-if ! restic snapshots >/dev/null 2>&1; then
-    echo "Restic repository is not initialized; initializing it now."
-    restic init
+if ! restic cat config >/dev/null; then
+    echo "ERROR: Restic repository is unavailable or not initialized." >&2
+    echo "Initialize a new repository explicitly with: restic init" >&2
+    exit 1
 fi
 
 POSTGRES_USER="${POSTGRES_USER:-postgres}"
@@ -76,6 +78,19 @@ echo "Creating consistent PostgreSQL dump..."
     --no-privileges > "$DUMP_PATH"
 test -s "$DUMP_PATH"
 
+echo "Creating consistent Redis RDB snapshot..."
+mkdir -p "$(dirname "$REDIS_DUMP_PATH")"
+REDIS_CONTAINER_ID="$("${compose[@]}" ps -q redis)"
+if [[ -z "$REDIS_CONTAINER_ID" ]]; then
+    echo "ERROR: Redis container is not running." >&2
+    exit 1
+fi
+REDIS_CONTAINER_DUMP="/tmp/ark-restic-dump.rdb"
+docker exec "$REDIS_CONTAINER_ID" redis-cli --rdb "$REDIS_CONTAINER_DUMP"
+docker cp "$REDIS_CONTAINER_ID:$REDIS_CONTAINER_DUMP" "$REDIS_DUMP_PATH"
+docker exec "$REDIS_CONTAINER_ID" rm -f "$REDIS_CONTAINER_DUMP"
+test -s "$REDIS_DUMP_PATH"
+
 echo "Copying uploaded files from the API volume..."
 API_CONTAINER_ID="$("${compose[@]}" ps -q api)"
 if [[ -z "$API_CONTAINER_ID" ]]; then
@@ -85,16 +100,25 @@ fi
 mkdir -p "$UPLOADS_PATH"
 docker cp "$API_CONTAINER_ID:/app/static/uploads/." "$UPLOADS_PATH/"
 
-targets=("$DUMP_PATH" "$UPLOADS_PATH")
+targets=("$DUMP_PATH" "$REDIS_DUMP_PATH" "$UPLOADS_PATH")
 if [[ -f "$PROJECT_ROOT/.env" ]]; then
     targets+=("$PROJECT_ROOT/.env")
 fi
 
 echo "Uploading backup to Restic repository..."
-restic backup --host "ark-api-dev" --tag "ark-api" --tag "database" "${targets[@]}"
+restic backup \
+    --host "ark-api-dev" \
+    --tag "ark-api" \
+    --tag "postgres" \
+    --tag "redis" \
+    --tag "uploads" \
+    --tag "config" \
+    "${targets[@]}"
 
 echo "Applying retention policy..."
 restic forget \
+    --host "ark-api-dev" \
+    --tag "ark-api" \
     --keep-daily "${RESTIC_KEEP_DAILY:-7}" \
     --keep-weekly "${RESTIC_KEEP_WEEKLY:-4}" \
     --keep-monthly "${RESTIC_KEEP_MONTHLY:-12}" \
