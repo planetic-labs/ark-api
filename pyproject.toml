@@ -16,7 +16,7 @@ dependencies = [
     "alembic>=1.19.2",
     "pydantic-settings>=2.15.0",
     "pyjwt[crypto]>=2.13.0",
-    "resend>=2.44.0",
+    "resend>=2.46.0",
 ]
 
 [tool.uv]
@@ -51,6 +51,6 @@ dev = [
     "httpx>=0.28.1",
     "pytest>=9.1.1",
     "pytest-asyncio>=1.4.0",
-    "ruff>=0.16.6",
+    "ruff>=0.17.1",
     "testcontainers[postgres]>=4.14.2",
 ]
